@@ -70,8 +70,9 @@ struct KalmanFitterExtensions {
   using Smoother = Delegate<Result<void>(const GeometryContext&, traj_t&,
                                          size_t, const Logger&)>;
 
-  using Updater = Delegate<Result<void>(const GeometryContext&, TrackStateProxy,
-                                        Direction, const Logger&)>;
+  using Updater =
+      Delegate<Result<void>(const GeometryContext&, const Surface*,
+                            TrackStateProxy, Direction, const Logger&)>;
 
   using OutlierFinder = Delegate<bool(ConstTrackStateProxy)>;
 
@@ -766,8 +767,9 @@ class KalmanFitter {
                               sourcelink_it->second, trackStateProxy);
 
         // If the update is successful, set covariance and
-        auto updateRes = extensions.updater(state.geoContext, trackStateProxy,
-                                            state.options.direction, logger());
+        auto updateRes =
+            extensions.updater(state.geoContext, surface, trackStateProxy,
+                               state.options.direction, logger());
         if (!updateRes.ok()) {
           ACTS_ERROR("Backward update step failed: " << updateRes.error());
           return updateRes.error();

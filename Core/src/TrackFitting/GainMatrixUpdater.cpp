@@ -11,6 +11,7 @@
 #include "Acts/Definitions/Algebra.hpp"
 #include "Acts/Definitions/TrackParametrization.hpp"
 #include "Acts/EventData/MeasurementHelpers.hpp"
+#include "Acts/Surfaces/LineSurface.hpp"
 #include "Acts/TrackFitting/KalmanFitterError.hpp"
 
 #include <algorithm>
@@ -22,7 +23,7 @@
 namespace Acts {
 
 std::tuple<double, std::error_code> GainMatrixUpdater::visitMeasurement(
-    InternalTrackState trackState, Direction direction,
+    InternalTrackState trackState, const Surface* surface, Direction direction,
     const Logger& logger) const {
   // default-constructed error represents success, i.e. an invalid error code
   std::error_code error;
@@ -43,9 +44,15 @@ std::tuple<double, std::error_code> GainMatrixUpdater::visitMeasurement(
     ACTS_VERBOSE("Calibrated measurement covariance:\n"
                  << calibratedCovariance);
 
-    const auto H = trackState.projector
-                       .template topLeftCorner<kMeasurementSize, eBoundSize>()
-                       .eval();
+    auto H = trackState.projector
+                 .template topLeftCorner<kMeasurementSize, eBoundSize>()
+                 .eval();
+
+    if (dynamic_cast<const LineSurface*>(surface) != nullptr) {
+      if (trackState.predicted[eBoundLoc0] < 0) {
+        H(0u, eBoundLoc0) = -1;
+      }
+    }
 
     ACTS_VERBOSE("Measurement projector H:\n" << H);
 
@@ -66,6 +73,7 @@ std::tuple<double, std::error_code> GainMatrixUpdater::visitMeasurement(
 
     trackState.filtered =
         trackState.predicted + K * (calibrated - H * trackState.predicted);
+
     trackState.filteredCovariance = (BoundSquareMatrix::Identity() - K * H) *
                                     trackState.predictedCovariance;
     ACTS_VERBOSE("Filtered parameters: " << trackState.filtered.transpose());

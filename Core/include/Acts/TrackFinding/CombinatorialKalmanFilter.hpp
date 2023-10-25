@@ -717,7 +717,7 @@ class CombinatorialKalmanFilter {
         auto selectedTrackStateRange = *selectorResult;
 
         auto procRes = processSelectedTrackStates(
-            state.geoContext, selectedTrackStateRange.first,
+            surface, state.geoContext, selectedTrackStateRange.first,
             selectedTrackStateRange.second, result, isOutlier, prevTipState,
             nBranchesOnSurface);
 
@@ -934,7 +934,7 @@ class CombinatorialKalmanFilter {
     /// @param prevTipState Tip state prior to this surface
     /// @param [in,out] nBranchesOnSurface Number of branches on surface, will be updated
     Result<void> processSelectedTrackStates(
-        const Acts::GeometryContext& gctx,
+        const Surface* surface, const Acts::GeometryContext& gctx,
         typename std::vector<typename traj_t::TrackStateProxy>::const_iterator
             begin,
         typename std::vector<typename traj_t::TrackStateProxy>::const_iterator
@@ -1015,7 +1015,7 @@ class CombinatorialKalmanFilter {
         } else {
           // Kalman update
           auto updateRes = m_extensions.updater(
-              gctx, trackState, Direction::Forward, *updaterLogger);
+              gctx, surface, trackState, Direction::Forward, *updaterLogger);
           if (!updateRes.ok()) {
             ACTS_ERROR("Update step failed: " << updateRes.error());
             return updateRes.error();

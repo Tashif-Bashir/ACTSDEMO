@@ -51,7 +51,7 @@ class GainMatrixUpdater {
   /// @param[in] direction The navigation direction
   /// @param[in] logger Where to write logging information to
   template <typename traj_t>
-  Result<void> operator()(const GeometryContext& gctx,
+  Result<void> operator()(const GeometryContext& gctx, const Surface* surface,
                           typename traj_t::TrackStateProxy trackState,
                           Direction direction = Direction::Forward,
                           const Logger& logger = getDummyLogger()) const {
@@ -98,7 +98,7 @@ class GainMatrixUpdater {
             trackState.projector(),
             trackState.calibratedSize(),
         },
-        direction, logger);
+        surface, direction, logger);
 
     trackState.chi2() = chi2;
 
@@ -107,8 +107,8 @@ class GainMatrixUpdater {
 
  private:
   std::tuple<double, std::error_code> visitMeasurement(
-      InternalTrackState trackState, Direction direction,
-      const Logger& logger) const;
+      InternalTrackState trackState, const Surface* surface,
+      Direction direction, const Logger& logger) const;
 };
 
 }  // namespace Acts

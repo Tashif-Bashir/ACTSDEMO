@@ -11,6 +11,7 @@
 #include "Acts/Definitions/TrackParametrization.hpp"
 #include "Acts/Definitions/Units.hpp"
 #include "Acts/Geometry/GeometryIdentifier.hpp"
+#include "Acts/Surfaces/LineSurface.hpp"
 #include "ActsExamples/EventData/Cluster.hpp"
 #include "ActsExamples/EventData/Index.hpp"
 #include "ActsExamples/EventData/IndexSourceLink.hpp"
@@ -39,6 +40,9 @@ ActsExamples::CsvMeasurementWriter::CsvMeasurementWriter(
   if (m_cfg.inputMeasurementSimHitsMap.empty()) {
     throw std::invalid_argument(
         "Missing hit-to-simulated-hits map input collection");
+  }
+  if (not m_cfg.trackingGeometry) {
+    throw std::invalid_argument("Missing tracking geometry");
   }
 
   m_inputMeasurementSimHitsMap.initialize(m_cfg.inputMeasurementSimHitsMap);
@@ -109,6 +113,16 @@ ActsExamples::ProcessCode ActsExamples::CsvMeasurementWriter::writeT(
           meas.local_key = 0;
           // Create a full set of parameters
           auto parameters = (m.expander() * m.parameters()).eval();
+
+          // Take a non-negative drfit distance measurement for Line Surface
+          const Acts::Surface* surface =
+              m_cfg.trackingGeometry->findSurface(geoId);
+          if (dynamic_cast<const Acts::LineSurface*>(surface) != nullptr) {
+            if (parameters[Acts::eBoundLoc0] < 0) {
+              parameters[Acts::eBoundLoc0] *= -1.f;
+            }
+          }
+
           meas.local0 = parameters[Acts::eBoundLoc0];
           meas.local1 = parameters[Acts::eBoundLoc1];
           meas.phi = parameters[Acts::eBoundPhi];
