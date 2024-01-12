@@ -11,8 +11,8 @@
 
 namespace Acts {
 
-template <typename E, typename R, typename A>
-auto MultiEigenStepperLoop<E, R, A>::boundState(
+template <typename E, typename R>
+auto MultiEigenStepperLoop<E, R>::boundState(
     State& state, const Surface& surface, bool transportCov,
     const FreeToBoundCorrection& freeToBoundCorrection) const
     -> Result<BoundState> {
@@ -62,9 +62,9 @@ auto MultiEigenStepperLoop<E, R, A>::boundState(
                     Jacobian::Zero(), accumulatedPathLength};
 }
 
-template <typename E, typename R, typename A>
-auto MultiEigenStepperLoop<E, R, A>::curvilinearState(State& state,
-                                                      bool transportCov) const
+template <typename E, typename R>
+auto MultiEigenStepperLoop<E, R>::curvilinearState(State& state,
+                                                   bool transportCov) const
     -> CurvilinearState {
   assert(!state.components.empty());
 
@@ -90,9 +90,9 @@ auto MultiEigenStepperLoop<E, R, A>::curvilinearState(State& state,
       Jacobian::Zero(), accumulatedPathLength};
 }
 
-template <typename E, typename R, typename A>
+template <typename E, typename R>
 template <typename propagator_state_t, typename navigator_t>
-Result<double> MultiEigenStepperLoop<E, R, A>::step(
+Result<double> MultiEigenStepperLoop<E, R>::step(
     propagator_state_t& state, const navigator_t& navigator) const {
   using Status = Acts::Intersection3D::Status;
 

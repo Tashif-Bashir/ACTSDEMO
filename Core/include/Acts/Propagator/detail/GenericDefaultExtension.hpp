@@ -1,6 +1,6 @@
 // This file is part of the Acts project.
 //
-// Copyright (C) 2018-2019 CERN for the benefit of the Acts project
+// Copyright (C) 2018-2024 CERN for the benefit of the Acts project
 //
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -9,6 +9,7 @@
 #pragma once
 
 #include "Acts/Definitions/TrackParametrization.hpp"
+#include "Acts/Propagator/detail/GenericExtensionBase.hpp"
 #include "Acts/Utilities/VectorHelpers.hpp"
 
 #include <array>
@@ -20,24 +21,11 @@ namespace detail {
 /// D of the RKN4 stepping. This is a pure implementation by textbook.
 /// @note This it templated on the scalar type because of the autodiff plugin.
 template <typename scalar_t>
-struct GenericDefaultExtension {
+struct GenericDefaultExtension
+    : public GenericExtensionBase<scalar_t, GenericDefaultExtension<scalar_t>> {
   using Scalar = scalar_t;
   /// @brief Vector3 replacement for the custom scalar type
   using ThisVector3 = Eigen::Matrix<Scalar, 3, 1>;
-
-  /// @brief Control function if the step evaluation would be valid
-  ///
-  /// @tparam propagator_state_t Type of the state of the propagator
-  /// @tparam stepper_t Type of the stepper
-  /// @tparam navigator_t Type of the navigator
-  ///
-  /// @return Boolean flag if the step would be valid
-  template <typename propagator_state_t, typename stepper_t,
-            typename navigator_t>
-  int bid(const propagator_state_t& /*state*/, const stepper_t& /*stepper*/,
-          const navigator_t& /*navigator*/) const {
-    return 1;
-  }
 
   /// @brief Evaluater of the k_i's of the RKN4. For the case of i = 0 this
   /// step sets up qop, too.
@@ -90,8 +78,21 @@ struct GenericDefaultExtension {
   template <typename propagator_state_t, typename stepper_t,
             typename navigator_t>
   bool finalize(propagator_state_t& state, const stepper_t& stepper,
-                const navigator_t& navigator, const double h) const {
-    propagateTime(state, stepper, navigator, h);
+                const navigator_t& /*navigator*/, const double h) const {
+    // using because of autodiff
+    using std::hypot;
+
+    /// This evaluation is based on dt/ds = 1/v = 1/(beta * c) with the velocity
+    /// v, the speed of light c and beta = v/c. This can be re-written as dt/ds
+    /// = sqrt(m^2/p^2 + c^{-2}) with the mass m and the momentum p.
+    auto m = stepper.particleHypothesis(state.stepping).mass();
+    auto p = stepper.absoluteMomentum(state.stepping);
+    auto dtds = hypot(1, m / p);
+    state.stepping.pars[eFreeTime] += h * dtds;
+    if (state.stepping.covTransport) {
+      state.stepping.derivative(3) = dtds;
+    }
+
     return true;
   }
 
@@ -114,39 +115,11 @@ struct GenericDefaultExtension {
   bool finalize(propagator_state_t& state, const stepper_t& stepper,
                 const navigator_t& navigator, const double h,
                 FreeMatrix& D) const {
-    propagateTime(state, stepper, navigator, h);
-    return transportMatrix(state, stepper, navigator, h, D);
+    return finalize(state, stepper, navigator, h) &&
+           transportMatrix(state, stepper, navigator, h, D);
   }
 
  private:
-  /// @brief Propagation function for the time coordinate
-  ///
-  /// @tparam propagator_state_t Type of the state of the propagator
-  /// @tparam stepper_t Type of the stepper
-  /// @tparam navigator_t Type of the navigator
-  ///
-  /// @param [in, out] state State of the propagator
-  /// @param [in] stepper Stepper of the propagation
-  /// @param [in] h Step size
-  template <typename propagator_state_t, typename stepper_t,
-            typename navigator_t>
-  void propagateTime(propagator_state_t& state, const stepper_t& stepper,
-                     const navigator_t& /*navigator*/, const double h) const {
-    // using because of autodiff
-    using std::hypot;
-
-    /// This evaluation is based on dt/ds = 1/v = 1/(beta * c) with the velocity
-    /// v, the speed of light c and beta = v/c. This can be re-written as dt/ds
-    /// = sqrt(m^2/p^2 + c^{-2}) with the mass m and the momentum p.
-    auto m = stepper.particleHypothesis(state.stepping).mass();
-    auto p = stepper.absoluteMomentum(state.stepping);
-    auto dtds = hypot(1, m / p);
-    state.stepping.pars[eFreeTime] += h * dtds;
-    if (state.stepping.covTransport) {
-      state.stepping.derivative(3) = dtds;
-    }
-  }
-
   /// @brief Calculates the transport matrix D for the jacobian
   ///
   /// @tparam propagator_state_t Type of the state of the propagator
@@ -192,10 +165,10 @@ struct GenericDefaultExtension {
     auto qop = stepper.qOverP(state.stepping);
     auto p = stepper.absoluteMomentum(state.stepping);
     auto dtds = hypot(1, m / p);
+    double half_h = h * 0.5;
 
     D = FreeMatrix::Identity();
 
-    double half_h = h * 0.5;
     // This sets the reference to the sub matrices
     // dFdx is already initialised as (3x3) idendity
     auto dFdT = D.block<3, 3>(0, 4);

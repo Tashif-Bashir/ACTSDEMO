@@ -8,27 +8,28 @@
 
 #include "Acts/EventData/detail/TransformationBoundToFree.hpp"
 #include "Acts/Propagator/ConstrainedStep.hpp"
+#include "Acts/Propagator/EigenStepperError.hpp"
 #include "Acts/Propagator/detail/CovarianceEngine.hpp"
 
-template <typename E, typename A>
-Acts::EigenStepper<E, A>::EigenStepper(
+template <typename E>
+Acts::EigenStepper<E>::EigenStepper(
     std::shared_ptr<const MagneticFieldProvider> bField, double overstepLimit)
     : m_bField(std::move(bField)), m_overstepLimit(overstepLimit) {}
 
-template <typename E, typename A>
-auto Acts::EigenStepper<E, A>::makeState(
+template <typename E>
+auto Acts::EigenStepper<E>::makeState(
     std::reference_wrapper<const GeometryContext> gctx,
     std::reference_wrapper<const MagneticFieldContext> mctx,
     const BoundTrackParameters& par, double ssize) const -> State {
   return State{gctx, m_bField->makeCache(mctx), par, ssize};
 }
 
-template <typename E, typename A>
-void Acts::EigenStepper<E, A>::resetState(State& state,
-                                          const BoundVector& boundParams,
-                                          const BoundSquareMatrix& cov,
-                                          const Surface& surface,
-                                          const double stepSize) const {
+template <typename E>
+void Acts::EigenStepper<E>::resetState(State& state,
+                                       const BoundVector& boundParams,
+                                       const BoundSquareMatrix& cov,
+                                       const Surface& surface,
+                                       const double stepSize) const {
   // Update the stepping state
   update(state,
          detail::transformBoundToFreeParameters(surface, state.geoContext,
@@ -45,8 +46,8 @@ void Acts::EigenStepper<E, A>::resetState(State& state,
   state.derivative = FreeVector::Zero();
 }
 
-template <typename E, typename A>
-auto Acts::EigenStepper<E, A>::boundState(
+template <typename E>
+auto Acts::EigenStepper<E>::boundState(
     State& state, const Surface& surface, bool transportCov,
     const FreeToBoundCorrection& freeToBoundCorrection) const
     -> Result<BoundState> {
@@ -57,9 +58,9 @@ auto Acts::EigenStepper<E, A>::boundState(
       freeToBoundCorrection);
 }
 
-template <typename E, typename A>
-auto Acts::EigenStepper<E, A>::curvilinearState(State& state,
-                                                bool transportCov) const
+template <typename E>
+auto Acts::EigenStepper<E>::curvilinearState(State& state,
+                                             bool transportCov) const
     -> CurvilinearState {
   return detail::curvilinearState(
       state.cov, state.jacobian, state.jacTransport, state.derivative,
@@ -67,38 +68,37 @@ auto Acts::EigenStepper<E, A>::curvilinearState(State& state,
       state.covTransport && transportCov, state.pathAccumulated);
 }
 
-template <typename E, typename A>
-void Acts::EigenStepper<E, A>::update(State& state,
-                                      const FreeVector& freeParams,
-                                      const BoundVector& boundParams,
-                                      const Covariance& covariance,
-                                      const Surface& surface) const {
+template <typename E>
+void Acts::EigenStepper<E>::update(State& state, const FreeVector& freeParams,
+                                   const BoundVector& boundParams,
+                                   const Covariance& covariance,
+                                   const Surface& surface) const {
   state.pars = freeParams;
   state.cov = covariance;
   state.jacToGlobal =
       surface.boundToFreeJacobian(state.geoContext, boundParams);
 }
 
-template <typename E, typename A>
-void Acts::EigenStepper<E, A>::update(State& state, const Vector3& uposition,
-                                      const Vector3& udirection, double qOverP,
-                                      double time) const {
+template <typename E>
+void Acts::EigenStepper<E>::update(State& state, const Vector3& uposition,
+                                   const Vector3& udirection, double qOverP,
+                                   double time) const {
   state.pars.template segment<3>(eFreePos0) = uposition;
   state.pars.template segment<3>(eFreeDir0) = udirection;
   state.pars[eFreeTime] = time;
   state.pars[eFreeQOverP] = qOverP;
 }
 
-template <typename E, typename A>
-void Acts::EigenStepper<E, A>::transportCovarianceToCurvilinear(
+template <typename E>
+void Acts::EigenStepper<E>::transportCovarianceToCurvilinear(
     State& state) const {
   detail::transportCovarianceToCurvilinear(state.cov, state.jacobian,
                                            state.jacTransport, state.derivative,
                                            state.jacToGlobal, direction(state));
 }
 
-template <typename E, typename A>
-void Acts::EigenStepper<E, A>::transportCovarianceToBound(
+template <typename E>
+void Acts::EigenStepper<E>::transportCovarianceToBound(
     State& state, const Surface& surface,
     const FreeToBoundCorrection& freeToBoundCorrection) const {
   detail::transportCovarianceToBound(
@@ -107,9 +107,9 @@ void Acts::EigenStepper<E, A>::transportCovarianceToBound(
       freeToBoundCorrection);
 }
 
-template <typename E, typename A>
+template <typename E>
 template <typename propagator_state_t, typename navigator_t>
-Acts::Result<double> Acts::EigenStepper<E, A>::step(
+Acts::Result<double> Acts::EigenStepper<E>::step(
     propagator_state_t& state, const navigator_t& navigator) const {
   using namespace UnitLiterals;
 
@@ -127,9 +127,7 @@ Acts::Result<double> Acts::EigenStepper<E, A>::step(
     return fieldRes.error();
   }
   sd.B_first = *fieldRes;
-  if (!state.stepping.extension.validExtensionForStep(state, *this,
-                                                      navigator) ||
-      !state.stepping.extension.k1(state, *this, navigator, sd.k1, sd.B_first,
+  if (!state.stepping.extension.k1(state, *this, navigator, sd.k1, sd.B_first,
                                    sd.kQoP)) {
     return 0.;
   }
@@ -270,7 +268,7 @@ Acts::Result<double> Acts::EigenStepper<E, A>::step(
   return h;
 }
 
-template <typename E, typename A>
-void Acts::EigenStepper<E, A>::setIdentityJacobian(State& state) const {
+template <typename E>
+void Acts::EigenStepper<E>::setIdentityJacobian(State& state) const {
   state.jacobian = BoundMatrix::Identity();
 }

@@ -22,6 +22,7 @@
 #include "Acts/Propagator/ConstrainedStep.hpp"
 #include "Acts/Propagator/EigenStepper.hpp"
 #include "Acts/Propagator/EigenStepperError.hpp"
+#include "Acts/Propagator/MultiStepperError.hpp"
 #include "Acts/Propagator/Propagator.hpp"
 #include "Acts/Propagator/detail/LoopStepperUtils.hpp"
 #include "Acts/Surfaces/Surface.hpp"
@@ -38,8 +39,6 @@
 #include <vector>
 
 #include <boost/container/small_vector.hpp>
-
-#include "MultiStepperError.hpp"
 
 namespace Acts {
 
@@ -208,17 +207,14 @@ struct MaxMomentumReducerLoop {
 /// * There are certain redundancies between the global State and the component
 /// states
 /// * The components do not share a single magnetic-field-cache
-/// @tparam extensionlist_t See EigenStepper for details
+/// @tparam extension_t See EigenStepper for details
 /// @tparam component_reducer_t How to map the multi-component state to a single
 /// component
-/// @tparam auctioneer_t See EigenStepper for details
 /// @tparam small_vector_size A size-hint how much memory should be allocated
 /// by the small vector
-template <typename extensionlist_t = StepperExtensionList<DefaultExtension>,
-          typename component_reducer_t = WeightedComponentReducerLoop,
-          typename auctioneer_t = detail::VoidAuctioneer>
-class MultiEigenStepperLoop
-    : public EigenStepper<extensionlist_t, auctioneer_t> {
+template <typename extension_t = DefaultExtension,
+          typename component_reducer_t = WeightedComponentReducerLoop>
+class MultiEigenStepperLoop : public EigenStepper<extension_t> {
   /// Limits the number of steps after at least one component reached the
   /// surface
   std::size_t m_stepLimitAfterFirstComponentOnSurface = 50;
@@ -233,7 +229,7 @@ class MultiEigenStepperLoop
 
  public:
   /// @brief Typedef to the Single-Component Eigen Stepper
-  using SingleStepper = EigenStepper<extensionlist_t, auctioneer_t>;
+  using SingleStepper = EigenStepper<extension_t>;
 
   /// @brief Typedef to the State of the single component Stepper
   using SingleState = typename SingleStepper::State;
@@ -260,7 +256,7 @@ class MultiEigenStepperLoop
   MultiEigenStepperLoop(std::shared_ptr<const MagneticFieldProvider> bField,
                         std::unique_ptr<const Logger> logger =
                             getDefaultLogger("GSF", Logging::INFO))
-      : EigenStepper<extensionlist_t, auctioneer_t>(std::move(bField)),
+      : EigenStepper<extension_t>(std::move(bField)),
         m_logger(std::move(logger)) {}
 
   struct State {
