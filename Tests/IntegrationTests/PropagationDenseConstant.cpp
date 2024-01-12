@@ -33,8 +33,7 @@ namespace ds = ActsTests::PropagationDatasets;
 using namespace Acts::UnitLiterals;
 
 using MagneticField = Acts::ConstantBField;
-using Stepper = Acts::EigenStepper<
-    Acts::StepperExtensionList<Acts::DenseEnvironmentExtension>>;
+using Stepper = Acts::EigenStepper<Acts::DenseEnvironmentExtension>;
 using Propagator = Acts::Propagator<Stepper, Acts::Navigator>;
 using RiddersPropagator = Acts::RiddersPropagator<Propagator>;
 
