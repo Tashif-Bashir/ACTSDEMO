@@ -7,6 +7,11 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include <boost/test/unit_test.hpp>
+#include <ROOT/RDataFrame.hxx> // Plots
+#include <ROOT/RVec.hxx> // plots
+#include <TCanvas.h>  // plots
+#include <TH1F.h>  // plots
+#include <TArrow.h> // plots
 
 #include "Acts/Definitions/Units.hpp"
 #include "Acts/EventData/TrackParameters.hpp"
@@ -45,6 +50,7 @@
 #include <cmath>
 #include <random>
 #include <string>
+#include <unordered_set>
 
 namespace {
 using namespace Acts;
@@ -237,6 +243,30 @@ const MeasurementResolutionMap resolutions = {
     {GeometryIdentifier(), resPixel},
 };
 
+
+// Define function AlignmentResiduals
+
+void AlignmentResiduals (const AlignmentResidual& alignResult)
+{
+
+    const auto& trajectories = alignResult.getTrajectories();
+    // 1D residuals (assuming only one direction -  X axis)
+    std::vector <double> x_residuals; 
+    for (std::size_t i=0; i < trajectories.size(); ++i) {
+      x_residuals.push_back(trajectories)[i].parameters().position().x());
+    }
+
+    TH1F* histoResX = new TH1F("histoResX", "Residuals - x axis", 100, -1.0, 1.0);
+    for (const auto& residual : x_residuals) {
+       histoResX->Fill(residual);
+    }
+
+    TCanvas* canvas = new TCanvas("alignment_residuals", "Alignment Residuals", 800, 600);
+
+    histoResX->Draw();
+
+    canvas->SaveAs("alignment_residuals.png");
+}
 struct KalmanFitterInputTrajectory {
   // The source links
   std::vector<TestSourceLink> sourcelinks;
@@ -270,6 +300,43 @@ std::vector<KalmanFitterInputTrajectory> createTrajectories(
   }
   return trajectories;
 }
+
+// Function for plotting alignment shift 
+void misalignmentPlot(const Acts::AlignmentResidual& alignResult) {
+
+    const auto& alignmentShifts = alignResult.getAlignmentShifts();
+
+    TCanvas* canvasMis = new TCanvas("canvasMis", "misalignment_shift", 850, 650);
+
+    // TODO: is there a better way then TArrow 
+    for (const auto& shift : alignmentShifts) {
+        TArrow* arrow = new TArrow(shift.first.x(), shift.first.y(),
+                                    shift.first.x() + shift.second.x(),
+                                    shift.first.y() + shift.second.y(), 0.02, "|>");
+        arrow->SetLineColor(kRed);
+        arrow->Draw();
+    }
+    canvasMisalignment->SaveAs("misalignment_shift.png");
+}
+
+ // Function for plotting 1D residuals in x direction 
+void alignmentResiduals(const Acts::AlignmentResidual& alignResult) {
+    
+    TH1F* histoResX = new TH1F("histoResX", "Residuals_x_axis", 100, -1.0, 1.0);
+    for (const auto& residual : x_residuals) {
+       histoResX->Fill(residual);
+    }
+
+    TCanvas* canvas = new TCanvas("alignment_residuals", "Alignment Residuals", 800, 600);
+
+    histoResX->Draw();
+    canvas->SaveAs("Residuals_x_axis.png");
+
+    misalignmentPlot(alignResult);
+}
+
+
+
 }  // namespace
 
 ///
@@ -312,18 +379,69 @@ BOOST_AUTO_TEST_CASE(ZeroFieldKalmanAlignment) {
       kfOptions, voidAlignUpdater);
   alignOptions.maxIterations = 1;
 
+
+  // manually configured alignmeny group with a geo_id (specified for the alignment group)
+
+
   // Set the surfaces to be aligned (fix the layer 8)
   unsigned int iSurface = 0;
   std::unordered_map<const Surface*, std::size_t> idxedAlignSurfaces;
   // Loop over the detector elements
   for (auto& det : detector.detectorStore) {
     const auto& surface = det->surface();
-    if (surface.geometryId().layer() != 8) {
-      alignOptions.alignedDetElements.push_back(det.get());
-      idxedAlignSurfaces.emplace(&surface, iSurface);
-      iSurface++;
+    //if (surface.geometryId().layer() != 8) {
+     // alignOptions.alignedDetElements.push_back(det.get());
+     // idxedAlignSurfaces.emplace(&surface, iSurface);
+     // iSurface++;
+       if (surface.geometryId() = geoIdToAlign){
+          surfacetoALign = & surface; 
+          break; 
+          }
     }
   }
+
+// Check 2 cases: geo_id - found or geo_id is not found
+
+// case 1: geo_id is found
+if (surfaceToAlign){
+    alignOptions.alignedDetElements.push_back(surfaceToAlign -> associatedDetectorElement());
+    idxedAlignSurfaces.emplace(surfaceToAlign, iSurface); 
+    iSurface++; 
+// case 2: geo_id is not found
+else  {  
+    std::cerr <<"Surface_ " << geoIdToAlign << "can't be found!" <<std::endl; 
+    return EXIT_FAILURE;
+}
+
+// Apply constant shift as misalignment 
+
+Acts::Vector3 misalignmentShift (0.4_mm, 0.6_mm, 0.9_mm); 
+
+// Define the set of modules that need to be shifted 
+std::unordered_set<unsigned int> shiftedModules = {1, 3, 5};
+
+// Looping over elements && check if the specific layer has to be shifted
+
+for (auto& det : detector.detectorStore) {
+    const auto& surface = det -> surface(); 
+
+    // shift of the specific layer 
+    if (shiftThisLayer.count(surface.geometryId().layer()) > 0) {
+        Acts::Surface modifiedSurface = surface;   // misalign surface 
+        modifiedSurface.applyAlignmentCorrections(misalignmentShift);}
+}
+    
+    // Check if the module needs to be shifted
+    if (shiftModules.count(surface.geometryId().layer()) > 0) {
+        Acts::Surface modifiedSurface = surface;   // Misalign surface 
+        modifiedSurface.applyAlignmentCorrections(misalignmentShift);
+    }
+
+
+ // Test Clyinder Geometry
+  TestCylinderDetector testCylinderDetector; 
+  const auto geometry = testCylinderDetector(); 
+}
 
   // Test the method to evaluate alignment state for a single track
   const auto& inputTraj = trajectories.front();
@@ -370,6 +488,70 @@ BOOST_AUTO_TEST_CASE(ZeroFieldKalmanAlignment) {
   BOOST_CHECK_EQUAL(alignState.alignmentToChi2Derivative.size(), 30);
   BOOST_CHECK_EQUAL(alignState.alignmentToChi2SecondDerivative.rows(), 30);
 
+// Unit tests that test makeAlignmentGroup functionality 
+
+struct DetectorAlignment::Config {
+  std::string alignmentGroupsFile;
+};
+
+int DetectorAlignment::runDetectorAlignment(
+    int argc, char* argv[],
+    const std::shared_ptr<ActsExamples::IBaseDetector>& detector,
+    ActsAlignment::AlignedTransformUpdater alignedTransformUpdater,
+    const AlignedDetElementGetter& alignedDetElementsGetter) {
+
+// replace json file with test cylinder geometry 
+
+struct TestCylinderDetector {
+    std::shared_ptr<const TrackingGeometry> operator()() const {
+    using namespace Acts::UnitLiterals; 
+    auto cylinderRadius = 100_mm; 
+    auto cylinderLength = 500_mm;
+    
+// cylinder layer 
+
+auto cylinderLayer = Acts::CylinderLayer::create(
+    Acts::Transform3::Identity(), cylinderRadius, -cylinderLength/2, cylinderLenghth / 2, cylinderSurface); 
+    
+
+// cylinder surface 
+auto cylinderSurface = Acts::Surface::makeShared<Acts::CylinderSurface> (Acts::Transform3::Identity(), cylinderRadius, -cylinderLength / 2, cylinderLength / 2); 
+
+
+auto trackingVolume = Acts::TrackingVolume::create(
+    Acts::Transform3::Identity(), nullptr, nullptr, 
+    Acts::LayerArray::create(cylinderLayer), nullptr, {}, "Cylinder_testing"); 
+
+
+return std::make_shared<const Acts::TrackingGeometry> (trackingVolume); 
+  }
+};
+
+ 
+
+    int DetectorAlignment::runDetectorAlignment(
+    int argc, char* argv[],
+    const std::shared_ptr<ActsExamples::IBaseDetector>& detector,
+    ActsAlignment::AlignedTransformUpdater alignedTransformUpdater,
+    const AlignedDetElementGetter& alignedDetElementsGetter) {
+
+  std::string alignmentGroupsFile = vm["name-alignment-groups-file"].as<std::string>();
+
+  // Unit test: Check if the alignmentGroupsFile is empty
+  if (alignmentGroupsFile.empty()) {
+    std::cout << "Unit Test: Alignment groups file is empty." << std::endl;
+    return EXIT_SUCCESS;
+  }
+
+  // Separate function for reading and parsing JSON
+  //std::vector<AlignmentAlgorithm::AlignmentParameters> alignmentParameters =
+   //   readJsonFile(alignmentGroupsFile);
+
+    // makeAlignmentGroup creates alignment groups
+    alignmentAlgorithm.makeAlignmentGroup(alignmentParameters);
+  }
+
+
   // Test the align method
   std::vector<std::vector<TestSourceLink>> trajCollection;
   trajCollection.reserve(10);
@@ -383,4 +565,7 @@ BOOST_AUTO_TEST_CASE(ZeroFieldKalmanAlignment) {
       alignZero.align(trajCollection, sParametersCollection, alignOptions);
 
   // BOOST_CHECK(alignRes.ok());
+
+  // Alignment residuals - plot
+  AlignmentResiduals(alignResiduals);
 }
