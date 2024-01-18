@@ -1,6 +1,6 @@
 // This file is part of the Acts project.
 //
-// Copyright (C) 2018-2020 CERN for the benefit of the Acts project
+// Copyright (C) 2023 CERN for the benefit of the Acts project
 //
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -181,27 +181,16 @@ struct SeedFinderConfig {
   /// measurement from strips on back-to-back modules.
   /// Enables setting of the following delegates.
   bool useDetailedDoubleMeasurementInfo = false;
-  /// Returns half of the length of the top strip.
-  Delegate<float(const SpacePoint&)> getTopHalfStripLength;
-  /// Returns half of the length of the bottom strip.
-  Delegate<float(const SpacePoint&)> getBottomHalfStripLength;
-  /// Returns direction of the top strip.
-  Delegate<Acts::Vector3(const SpacePoint&)> getTopStripDirection;
-  /// Returns direction of the bottom strip.
-  Delegate<Acts::Vector3(const SpacePoint&)> getBottomStripDirection;
-  /// Returns distance between the centers of the two strips.
-  Delegate<Acts::Vector3(const SpacePoint&)> getStripCenterDistance;
-  /// Returns position of the center of the top strip.
-  Delegate<Acts::Vector3(const SpacePoint&)> getTopStripCenterPosition;
+
   /// Tolerance parameter used to check the compatibility of space-point
   /// coordinates in xyz. This is only used in a detector specific check for
   /// strip modules
   float toleranceParam = 1.1 * Acts::UnitConstants::mm;
-
+  
   // Delegate to apply experiment specific cuts
   Delegate<bool(float /*bottomRadius*/, float /*cotTheta*/)> experimentCuts{
       DelegateFuncTag<&noopExperimentCuts>{}};
-
+  
   bool isInInternalUnits = false;
 
   SeedFinderConfig toInternalUnits() const {

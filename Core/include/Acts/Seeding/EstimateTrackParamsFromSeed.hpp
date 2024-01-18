@@ -1,6 +1,6 @@
 // This file is part of the Acts project.
 //
-// Copyright (C) 2021 CERN for the benefit of the Acts project
+// Copyright (C) 2023 CERN for the benefit of the Acts project
 //
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -10,8 +10,8 @@
 
 #include "Acts/Definitions/TrackParametrization.hpp"
 #include "Acts/Definitions/Units.hpp"
+#include "Acts/EventData/Seed.hpp"
 #include "Acts/Geometry/GeometryContext.hpp"
-#include "Acts/Seeding/Seed.hpp"
 #include "Acts/Surfaces/Surface.hpp"
 #include "Acts/Utilities/Logger.hpp"
 
@@ -65,11 +65,7 @@ std::optional<BoundVector> estimateTrackParamsFromSeed(
   ActsScalar r2m = 0., r4m = 0.;
   ActsScalar xr2m = 0., yr2m = 0.;
 
-  for (spacepoint_iterator_t it = spBegin; it != spEnd; it++) {
-    if (*it == nullptr) {
-      ACTS_ERROR("Empty space point found. This should not happen.")
-      return std::nullopt;
-    }
+  for (spacepoint_iterator_t it = spBegin; it != spEnd; ++it) {
     const auto& sp = *it;
 
     ActsScalar x = sp->x();
@@ -184,10 +180,6 @@ std::optional<BoundVector> estimateTrackParamsFromSeed(
   // and top space point, respectively
   for (std::size_t isp = 0; isp < 3; ++isp) {
     spacepoint_iterator_t it = std::next(spBegin, isp);
-    if (*it == nullptr) {
-      ACTS_ERROR("Empty space point found. This should not happen.")
-      return std::nullopt;
-    }
     const auto& sp = *it;
     spGlobalPositions[isp] = Vector3(sp->x(), sp->y(), sp->z());
     spGlobalTimes[isp] = sp->t();

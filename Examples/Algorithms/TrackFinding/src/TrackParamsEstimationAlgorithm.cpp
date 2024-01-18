@@ -1,6 +1,6 @@
 // This file is part of the Acts project.
 //
-// Copyright (C) 2021 CERN for the benefit of the Acts project
+// Copyright (C) 2023 CERN for the benefit of the Acts project
 //
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -9,13 +9,13 @@
 #include "ActsExamples/TrackFinding/TrackParamsEstimationAlgorithm.hpp"
 
 #include "Acts/Definitions/Algebra.hpp"
+#include "Acts/EventData/Seed.hpp"
 #include "Acts/EventData/ParticleHypothesis.hpp"
 #include "Acts/EventData/SourceLink.hpp"
 #include "Acts/Geometry/GeometryIdentifier.hpp"
 #include "Acts/Geometry/TrackingGeometry.hpp"
 #include "Acts/MagneticField/MagneticFieldProvider.hpp"
 #include "Acts/Seeding/EstimateTrackParamsFromSeed.hpp"
-#include "Acts/Seeding/Seed.hpp"
 #include "Acts/Surfaces/Surface.hpp"
 #include "Acts/Utilities/Result.hpp"
 #include "ActsExamples/EventData/IndexSourceLink.hpp"
@@ -98,7 +98,7 @@ ActsExamples::ProcessCode ActsExamples::TrackParamsEstimationAlgorithm::execute(
   for (std::size_t iseed = 0; iseed < seeds.size(); ++iseed) {
     const auto& seed = seeds[iseed];
     // Get the bottom space point and its reference surface
-    const auto bottomSP = seed.sp().front();
+    const auto& bottomSP = seed.sp().front();
     if (bottomSP->sourceLinks().empty()) {
       ACTS_WARNING("Missing source link in the space point")
       continue;

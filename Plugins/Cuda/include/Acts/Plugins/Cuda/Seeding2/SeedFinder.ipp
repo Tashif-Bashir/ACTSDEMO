@@ -19,8 +19,6 @@
 
 // Acts include(s).
 #include "Acts/Seeding/CandidatesForMiddleSp.hpp"
-#include "Acts/Seeding/InternalSeed.hpp"
-#include "Acts/Seeding/InternalSpacePoint.hpp"
 
 // System include(s).
 #include <cstring>
@@ -81,7 +79,6 @@ template <typename external_spacepoint_t>
 template <typename sp_range_t>
 std::vector<Seed<external_spacepoint_t>>
 SeedFinder<external_spacepoint_t>::createSeedsForGroup(
-    Acts::SpacePointData& spacePointData,
     Acts::SpacePointGrid<external_spacepoint_t>& grid,
     const sp_range_t& bottomSPs, const std::size_t middleSPs,
     const sp_range_t& topSPs) const {
@@ -95,26 +92,24 @@ SeedFinder<external_spacepoint_t>::createSeedsForGroup(
 
   // Create more convenient vectors out of the space point containers.
   auto spVecMaker = [&grid](const sp_range_t& spRange) {
-    std::vector<Acts::InternalSpacePoint<external_spacepoint_t>*> result;
+    std::vector<const external_spacepoint_t*> result;
     for (std::size_t idx : spRange) {
       auto& collection = grid.at(idx);
-      for (auto& sp : collection) {
-        result.push_back(sp.get());
+      for (const auto& sp : collection) {
+        result.push_back(sp);
       }
     }
     return result;
   };
 
-  std::vector<Acts::InternalSpacePoint<external_spacepoint_t>*> bottomSPVec(
-      spVecMaker(bottomSPs));
-  std::vector<Acts::InternalSpacePoint<external_spacepoint_t>*> topSPVec(
-      spVecMaker(topSPs));
+  std::vector<const external_spacepoint_t*> bottomSPVec(spVecMaker(bottomSPs));
+  std::vector<const external_spacepoint_t*> topSPVec(spVecMaker(topSPs));
 
-  std::vector<Acts::InternalSpacePoint<external_spacepoint_t>*> middleSPVec;
+  std::vector<const external_spacepoint_t*> middleSPVec;
   {
     auto& collection = grid.at(middleSPs);
     for (auto& sp : collection) {
-      middleSPVec.push_back(sp.get());
+      middleSPVec.push_back(sp);
     }
   }
 
@@ -213,8 +208,8 @@ SeedFinder<external_spacepoint_t>::createSeedsForGroup(
   auto triplet_itr = tripletCandidates.begin();
   auto triplet_end = tripletCandidates.end();
   for (; triplet_itr != triplet_end; ++triplet_itr, ++middleIndex) {
-    std::vector<typename CandidatesForMiddleSp<
-        const InternalSpacePoint<external_spacepoint_t>>::value_type>
+    std::vector<
+        typename CandidatesForMiddleSp<const external_spacepoint_t>::value_type>
         candidates;
 
     auto& middleSP = *(middleSPVec[middleIndex]);
@@ -226,14 +221,12 @@ SeedFinder<external_spacepoint_t>::createSeedsForGroup(
       candidates.emplace_back(bottomSP, middleSP, topSP, triplet.weight, 0,
                               false);
     }
-    std::sort(
-        candidates.begin(), candidates.end(),
-        CandidatesForMiddleSp<const InternalSpacePoint<external_spacepoint_t>>::
-            descendingByQuality);
+    std::sort(candidates.begin(), candidates.end(),
+              CandidatesForMiddleSp<
+                  const external_spacepoint_t>::descendingByQuality);
     std::size_t numQualitySeeds = 0;  // not used but needs to be fixed
     m_commonConfig.seedFilter->filterSeeds_1SpFixed(
-        spacePointData, candidates, numQualitySeeds,
-        std::back_inserter(outputVec));
+        candidates, numQualitySeeds, std::back_inserter(outputVec));
   }
 
   // Free up all allocated device memory.

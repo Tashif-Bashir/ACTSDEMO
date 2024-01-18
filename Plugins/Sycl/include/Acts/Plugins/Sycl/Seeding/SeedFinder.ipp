@@ -16,8 +16,6 @@
 
 // Acts include(s).
 #include "Acts/Seeding/CandidatesForMiddleSp.hpp"
-#include "Acts/Seeding/InternalSeed.hpp"
-#include "Acts/Seeding/InternalSpacePoint.hpp"
 
 // SYCL plugin include(s)
 #include "Acts/Plugins/Sycl/Seeding/CreateSeedsForGroupSycl.hpp"
@@ -63,7 +61,6 @@ template <typename external_spacepoint_t>
 template <typename sp_range_t>
 std::vector<Acts::Seed<external_spacepoint_t>>
 SeedFinder<external_spacepoint_t>::createSeedsForGroup(
-    Acts::SpacePointData& spacePointData,
     Acts::SpacePointGrid<external_spacepoint_t>& grid,
     const sp_range_t& bottomSPs, const std::size_t middleSPs,
     const sp_range_t& topSPs) const {
@@ -79,42 +76,42 @@ SeedFinder<external_spacepoint_t>::createSeedsForGroup(
   vecmem::vector<detail::DeviceSpacePoint> deviceMiddleSPs(m_resource);
   vecmem::vector<detail::DeviceSpacePoint> deviceTopSPs(m_resource);
 
-  std::vector<Acts::InternalSpacePoint<external_spacepoint_t>*> bottomSPvec;
-  std::vector<Acts::InternalSpacePoint<external_spacepoint_t>*> middleSPvec;
-  std::vector<Acts::InternalSpacePoint<external_spacepoint_t>*> topSPvec;
+  std::vector<const external_spacepoint_t*> bottomSPvec;
+  std::vector<const external_spacepoint_t*> middleSPvec;
+  std::vector<const external_spacepoint_t*> topSPvec;
 
   for (std::size_t SPidx : bottomSPs) {
     auto& sp_collection = grid.at(SPidx);
-    for (auto& SP : sp_collection) {
-      bottomSPvec.push_back(SP.get());
+    for (const auto& SP : sp_collection) {
+      bottomSPvec.push_back(SP);
     }
   }
   deviceBottomSPs.reserve(bottomSPvec.size());
-  for (auto SP : bottomSPvec) {
+  for (const auto SP : bottomSPvec) {
     deviceBottomSPs.push_back({SP->x(), SP->y(), SP->z(), SP->radius(),
                                SP->varianceR(), SP->varianceZ()});
   }
 
   {
     auto& sp_collection = grid.at(middleSPs);
-    for (auto& SP : sp_collection) {
-      middleSPvec.push_back(SP.get());
+    for (const auto& SP : sp_collection) {
+      middleSPvec.push_back(SP);
     }
   }
   deviceMiddleSPs.reserve(middleSPvec.size());
-  for (auto SP : middleSPvec) {
+  for (const auto SP : middleSPvec) {
     deviceMiddleSPs.push_back({SP->x(), SP->y(), SP->z(), SP->radius(),
                                SP->varianceR(), SP->varianceZ()});
   }
 
   for (auto SPidx : topSPs) {
     auto& sp_collection = grid.at(SPidx);
-    for (auto& SP : sp_collection) {
-      topSPvec.push_back(SP.get());
+    for (const auto& SP : sp_collection) {
+      topSPvec.push_back(SP);
     }
   }
   deviceTopSPs.reserve(topSPvec.size());
-  for (auto SP : topSPvec) {
+  for (const auto SP : topSPvec) {
     deviceTopSPs.push_back({SP->x(), SP->y(), SP->z(), SP->radius(),
                             SP->varianceR(), SP->varianceZ()});
   }
@@ -129,8 +126,8 @@ SeedFinder<external_spacepoint_t>::createSeedsForGroup(
 
   // Iterate through seeds returned by the SYCL algorithm and perform the last
   // step of filtering for fixed middle SP.
-  std::vector<typename CandidatesForMiddleSp<
-      const InternalSpacePoint<external_spacepoint_t>>::value_type>
+  std::vector<
+      typename CandidatesForMiddleSp<const external_spacepoint_t>::value_type>
       candidates;
 
   for (std::size_t mi = 0; mi < seeds.size(); ++mi) {
@@ -143,13 +140,11 @@ SeedFinder<external_spacepoint_t>::createSeedsForGroup(
 
       candidates.emplace_back(bottomSP, middleSP, topSP, weight, 0, false);
     }
-    std::sort(
-        candidates.begin(), candidates.end(),
-        CandidatesForMiddleSp<const InternalSpacePoint<external_spacepoint_t>>::
-            descendingByQuality);
+    std::sort(candidates.begin(), candidates.end(),
+              CandidatesForMiddleSp<
+                  const external_spacepoint_t>::descendingByQuality);
     std::size_t numQualitySeeds = 0;  // not used but needs to be fixed
-    m_config.seedFilter->filterSeeds_1SpFixed(spacePointData, candidates,
-                                              numQualitySeeds,
+    m_config.seedFilter->filterSeeds_1SpFixed(candidates, numQualitySeeds,
                                               std::back_inserter(outputVec));
   }
   return outputVec;
