@@ -36,7 +36,7 @@ using namespace Acts::UnitLiterals;
 using MagneticField = Acts::ConstantBField;
 using Extension = Acts::AutodiffExtensionWrapper<
     Acts::detail::GenericDenseEnvironmentExtension>;
-using Stepper = Acts::EigenStepper<Acts::StepperExtensionList<Extension>>;
+using Stepper = Acts::EigenStepper<Extension>;
 using Propagator = Acts::Propagator<Stepper, Acts::Navigator>;
 using RiddersPropagator = Acts::RiddersPropagator<Propagator>;
 

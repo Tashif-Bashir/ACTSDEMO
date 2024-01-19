@@ -1,6 +1,6 @@
 // This file is part of the Acts project.
 //
-// Copyright (C) 2018-2019 CERN for the benefit of the Acts project
+// Copyright (C) 2018-2024 CERN for the benefit of the Acts project
 //
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -8,18 +8,14 @@
 
 #pragma once
 
-// Workaround for building on clang+libstdc++
-#include "Acts/Utilities/detail/ReferenceWrapperAnyCompat.hpp"
-
 #include "Acts/Definitions/PdgParticle.hpp"
-#include "Acts/Geometry/GeometryContext.hpp"
-#include "Acts/MagneticField/MagneticFieldContext.hpp"
+#include "Acts/Definitions/TrackParametrization.hpp"
 #include "Acts/Material/Interactions.hpp"
-#include "Acts/Propagator/Propagator.hpp"
+#include "Acts/Propagator/detail/GenericDefaultExtension.hpp"
+#include "Acts/Utilities/VectorHelpers.hpp"
 
 #include <array>
 #include <cmath>
-#include <functional>
 
 namespace Acts {
 namespace detail {
@@ -31,10 +27,12 @@ namespace detail {
 /// propagation is in a TrackingVolume with attached material.
 /// @note This it templated on the scalar type because of the autodiff plugin.
 template <typename scalar_t>
-struct GenericDenseEnvironmentExtension {
+struct GenericDenseEnvironmentExtension
+    : public GenericDefaultExtension<scalar_t> {
   using Scalar = scalar_t;
   /// @brief Vector3 replacement for the custom scalar type
   using ThisVector3 = Eigen::Matrix<Scalar, 3, 1>;
+  using Base = GenericDefaultExtension<scalar_t>;
 
   /// Momentum at a certain point
   Scalar currentMomentum = 0.;
@@ -60,24 +58,10 @@ struct GenericDenseEnvironmentExtension {
   /// Energy at each sub-step
   std::array<Scalar, 4> energy{};
 
-  /// @brief Default constructor
-  GenericDenseEnvironmentExtension() = default;
-
-  /// @brief Control function if the step evaluation would be valid
-  ///
-  /// @tparam propagator_state_t Type of the state of the propagator
-  /// @tparam stepper_t Type of the stepper
-  /// @tparam navigator_t Type of the navigator
-  ///
-  /// @param [in] state State of the propagator
-  /// @param [in] stepper Stepper of the propagator
-  /// @param [in] navigator Navigator of the propagator
-  ///
-  /// @return Boolean flag if the step would be valid
   template <typename propagator_state_t, typename stepper_t,
             typename navigator_t>
-  int bid(const propagator_state_t& state, const stepper_t& stepper,
-          const navigator_t& navigator) const {
+  bool isDense(const propagator_state_t& state, const stepper_t& stepper,
+               const navigator_t& navigator) const {
     const auto& particleHypothesis = stepper.particleHypothesis(state.stepping);
     float absQ = particleHypothesis.absoluteCharge();
     float mass = particleHypothesis.mass();
@@ -86,15 +70,15 @@ struct GenericDenseEnvironmentExtension {
     if (absQ == 0. || mass == 0. ||
         stepper.absoluteMomentum(state.stepping) <
             state.options.momentumCutOff) {
-      return 0;
+      return false;
     }
 
     // Check existence of a volume with material
-    if (!navigator.currentVolumeMaterial(state.navigation)) {
-      return 0;
+    if (navigator.currentVolumeMaterial(state.navigation) == nullptr) {
+      return false;
     }
 
-    return 2;
+    return true;
   }
 
   /// @brief Evaluater of the k_i's of the RKN4. For the case of i = 0 this
@@ -123,6 +107,11 @@ struct GenericDenseEnvironmentExtension {
          const ThisVector3& kprev = ThisVector3::Zero()) {
     // using because of autodiff
     using std::hypot;
+
+    if (!isDense(state, stepper, navigator)) {
+      return static_cast<Base*>(this)->k(state, stepper, navigator, knew,
+                                         bField, kQoP, i, h, kprev);
+    }
 
     double q = stepper.charge(state.stepping);
     const auto& particleHypothesis = stepper.particleHypothesis(state.stepping);
@@ -180,9 +169,14 @@ struct GenericDenseEnvironmentExtension {
   template <typename propagator_state_t, typename stepper_t,
             typename navigator_t>
   bool finalize(propagator_state_t& state, const stepper_t& stepper,
-                const navigator_t& /*navigator*/, const double h) const {
+                const navigator_t& navigator, const double h) const {
     // using because of autodiff
     using std::hypot;
+
+    if (!isDense(state, stepper, navigator)) {
+      return static_cast<const Base*>(this)->finalize(state, stepper, navigator,
+                                                      h);
+    }
 
     const auto& particleHypothesis = stepper.particleHypothesis(state.stepping);
     float mass = particleHypothesis.mass();
@@ -280,13 +274,12 @@ struct GenericDenseEnvironmentExtension {
     // using because of autodiff
     using std::hypot;
 
+    auto m = state.stepping.particleHypothesis.mass();
     auto& sd = state.stepping.stepData;
     auto dir = stepper.direction(state.stepping);
-    const auto& particleHypothesis = stepper.particleHypothesis(state.stepping);
-    float mass = particleHypothesis.mass();
+    double half_h = h * 0.5;
 
     D = FreeMatrix::Identity();
-    const double half_h = h * 0.5;
 
     // This sets the reference to the sub matrices
     // dFdx is already initialised as (3x3) zero
@@ -358,32 +351,32 @@ struct GenericDenseEnvironmentExtension {
     // The following comment lines refer to the application of the time being
     // treated as a position. Since t and qop are treated independently for now,
     // this just serves as entry point for building their relation
-    //~ double dtpp1dl = -mass * mass * qop[0] * qop[0] *
-    //~ (3. * g + qop[0] * dgdqop(energy[0], .mass,
+    //~ double dtpp1dl = -m * m * qop[0] * qop[0] *
+    //~ (3. * g + qop[0] * dgdqop(energy[0], m,
     //~ absPdg, meanEnergyLoss));
 
-    double dtp1dl = qop[0] * mass * mass / hypot(1, qop[0] * mass);
+    double dtp1dl = qop[0] * m * m / hypot(1, qop[0] * m);
     double qopNew = qop[0] + half_h * Lambdappi[0];
 
-    //~ double dtpp2dl = -mass * mass * qopNew *
+    //~ double dtpp2dl = -m * m * qopNew *
     //~ qopNew *
     //~ (3. * g * (1. + half_h * jdL[0]) +
-    //~ qopNew * dgdqop(energy[1], mass, absPdgCode, meanEnergyLoss));
+    //~ qopNew * dgdqop(energy[1], m, absPdgCode, meanEnergyLoss));
 
-    double dtp2dl = qopNew * mass * mass / std::hypot(1, qopNew * mass);
+    double dtp2dl = qopNew * m * m / std::hypot(1, qopNew * m);
     qopNew = qop[0] + half_h * Lambdappi[1];
 
-    //~ double dtpp3dl = -mass * mass * qopNew *
+    //~ double dtpp3dl = -m * m * qopNew *
     //~ qopNew *
     //~ (3. * g * (1. + half_h * jdL[1]) +
-    //~ qopNew * dgdqop(energy[2], mass, absPdg, meanEnergyLoss));
+    //~ qopNew * dgdqop(energy[2], m, absPdg, meanEnergyLoss));
 
-    double dtp3dl = qopNew * mass * mass / hypot(1, qopNew * mass);
+    double dtp3dl = qopNew * m * m / hypot(1, qopNew * m);
     qopNew = qop[0] + half_h * Lambdappi[2];
-    double dtp4dl = qopNew * mass * mass / hypot(1, qopNew * mass);
+    double dtp4dl = qopNew * m * m / hypot(1, qopNew * m);
 
-    //~ D(3, 7) = h * mass * mass * qop[0] /
-    //~ hypot(1., mass * qop[0])
+    //~ D(3, 7) = h * m * m * qop[0] /
+    //~ hypot(1., m * qop[0])
     //~ + h * h / 6. * (dtpp1dl + dtpp2dl + dtpp3dl);
 
     D(3, 7) = (h / 6.) * (dtp1dl + 2. * (dtp2dl + dtp3dl) + dtp4dl);

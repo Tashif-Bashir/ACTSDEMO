@@ -35,8 +35,7 @@ using AtlasPropagator = Acts::Propagator<AtlasStepper>;
 
 using Extension =
     Acts::AutodiffExtensionWrapper<Acts::detail::GenericDefaultExtension>;
-using AutodiffStepper =
-    Acts::EigenStepper<Acts::StepperExtensionList<Extension>>;
+using AutodiffStepper = Acts::EigenStepper<Extension>;
 using AutodiffPropagator = Acts::Propagator<AutodiffStepper>;
 
 // absolute parameter tolerances for position, direction, and absolute momentum

@@ -61,10 +61,7 @@ ActsExamples::ProcessCode setupPropagation(
   Acts::Navigator navigator(cfg);
 
   // Resolve the bfield map template and create the propagator
-  using Stepper = Acts::EigenStepper<
-      Acts::StepperExtensionList<Acts::DefaultExtension,
-                                 Acts::DenseEnvironmentExtension>,
-      Acts::detail::HighestValidAuctioneer>;
+  using Stepper = Acts::EigenStepper<Acts::DenseEnvironmentExtension>;
   using Propagator = Acts::Propagator<Stepper, Acts::Navigator>;
   Stepper stepper(std::move(bfield));
   Propagator propagator(std::move(stepper), std::move(navigator));

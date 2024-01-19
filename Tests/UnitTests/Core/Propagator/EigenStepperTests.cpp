@@ -12,7 +12,6 @@
 #include "Acts/Definitions/Direction.hpp"
 #include "Acts/Definitions/TrackParametrization.hpp"
 #include "Acts/Definitions/Units.hpp"
-#include "Acts/EventData/Charge.hpp"
 #include "Acts/EventData/GenericBoundTrackParameters.hpp"
 #include "Acts/EventData/GenericCurvilinearTrackParameters.hpp"
 #include "Acts/EventData/ParticleHypothesis.hpp"
@@ -41,8 +40,6 @@
 #include "Acts/Propagator/MaterialInteractor.hpp"
 #include "Acts/Propagator/Navigator.hpp"
 #include "Acts/Propagator/Propagator.hpp"
-#include "Acts/Propagator/StepperExtensionList.hpp"
-#include "Acts/Propagator/detail/Auctioneer.hpp"
 #include "Acts/Surfaces/BoundaryCheck.hpp"
 #include "Acts/Surfaces/PlaneSurface.hpp"
 #include "Acts/Surfaces/RectangleBounds.hpp"
@@ -54,15 +51,11 @@
 #include "Acts/Utilities/UnitVectors.hpp"
 
 #include <algorithm>
-#include <array>
 #include <cmath>
-#include <functional>
 #include <limits>
-#include <map>
 #include <memory>
 #include <optional>
 #include <string>
-#include <tuple>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -368,7 +361,6 @@ BOOST_AUTO_TEST_CASE(eigen_stepper_test) {
 
     copy.geoContext = state.geoContext;
     copy.extension = state.extension;
-    copy.auctioneer = state.auctioneer;
     copy.stepData = state.stepData;
 
     return copy;
@@ -602,15 +594,9 @@ BOOST_AUTO_TEST_CASE(step_extension_vacuum_test) {
 
   // Build stepper and propagator
   auto bField = std::make_shared<ConstantBField>(Vector3(0., 0., 0.));
-  EigenStepper<
-      StepperExtensionList<DefaultExtension, DenseEnvironmentExtension>,
-      detail::HighestValidAuctioneer>
-      es(bField);
-  Propagator<EigenStepper<StepperExtensionList<DefaultExtension,
-                                               DenseEnvironmentExtension>,
-                          detail::HighestValidAuctioneer>,
-             Navigator>
-      prop(es, naviVac);
+  EigenStepper<DenseEnvironmentExtension> es(bField);
+  Propagator<EigenStepper<DenseEnvironmentExtension>, Navigator> prop(es,
+                                                                      naviVac);
 
   // Launch and collect results
   const auto& result = prop.propagate(sbtp, propOpts).value();
@@ -640,9 +626,8 @@ BOOST_AUTO_TEST_CASE(step_extension_vacuum_test) {
   propOptsDef.maxSteps = 100;
   propOptsDef.maxStepSize = 1.5_m;
 
-  EigenStepper<StepperExtensionList<DefaultExtension>> esDef(bField);
-  Propagator<EigenStepper<StepperExtensionList<DefaultExtension>>, Navigator>
-      propDef(esDef, naviVac);
+  EigenStepper<DefaultExtension> esDef(bField);
+  Propagator<EigenStepper<DefaultExtension>, Navigator> propDef(esDef, naviVac);
 
   // Launch and collect results
   const auto& resultDef = propDef.propagate(sbtp, propOptsDef).value();
@@ -711,16 +696,10 @@ BOOST_AUTO_TEST_CASE(step_extension_material_test) {
 
   // Build stepper and propagator
   auto bField = std::make_shared<ConstantBField>(Vector3(0., 0., 0.));
-  EigenStepper<
-      StepperExtensionList<DefaultExtension, DenseEnvironmentExtension>,
-      detail::HighestValidAuctioneer>
-      es(bField);
-  Propagator<EigenStepper<StepperExtensionList<DefaultExtension,
-                                               DenseEnvironmentExtension>,
-                          detail::HighestValidAuctioneer>,
-             Navigator>
-      prop(es, naviMat,
-           Acts::getDefaultLogger("Propagator", Acts::Logging::VERBOSE));
+  EigenStepper<DefaultExtension> es(bField);
+  Propagator<EigenStepper<DefaultExtension>, Navigator> prop(
+      es, naviMat,
+      Acts::getDefaultLogger("Propagator", Acts::Logging::VERBOSE));
 
   // Launch and collect results
   const auto& result = prop.propagate(sbtp, propOpts).value();
@@ -758,10 +737,9 @@ BOOST_AUTO_TEST_CASE(step_extension_material_test) {
   propOptsDense.maxStepSize = 1.5_m;
 
   // Build stepper and propagator
-  EigenStepper<StepperExtensionList<DenseEnvironmentExtension>> esDense(bField);
-  Propagator<EigenStepper<StepperExtensionList<DenseEnvironmentExtension>>,
-             Navigator>
-      propDense(esDense, naviMat);
+  EigenStepper<DenseEnvironmentExtension> esDense(bField);
+  Propagator<EigenStepper<DenseEnvironmentExtension>, Navigator> propDense(
+      esDense, naviMat);
 
   // Launch and collect results
   const auto& resultDense = propDense.propagate(sbtp, propOptsDense).value();
@@ -785,15 +763,8 @@ BOOST_AUTO_TEST_CASE(step_extension_material_test) {
 
   // Re-launch the configuration with magnetic field
   bField->setField(Vector3{0., 1_T, 0.});
-  EigenStepper<
-      StepperExtensionList<DefaultExtension, DenseEnvironmentExtension>,
-      detail::HighestValidAuctioneer>
-      esB(bField);
-  Propagator<EigenStepper<StepperExtensionList<DefaultExtension,
-                                               DenseEnvironmentExtension>,
-                          detail::HighestValidAuctioneer>,
-             Navigator>
-      propB(esB, naviMat);
+  EigenStepper<DefaultExtension> esB(bField);
+  Propagator<EigenStepper<DefaultExtension>, Navigator> propB(esB, naviMat);
 
   const auto& resultB = propB.propagate(sbtp, propOptsDense).value();
   const StepCollector::this_result& stepResultB =
@@ -873,15 +844,9 @@ BOOST_AUTO_TEST_CASE(step_extension_vacmatvac_test) {
 
   // Build stepper and propagator
   auto bField = std::make_shared<ConstantBField>(Vector3(0., 1_T, 0.));
-  EigenStepper<
-      StepperExtensionList<DefaultExtension, DenseEnvironmentExtension>,
-      detail::HighestValidAuctioneer>
-      es(bField);
-  Propagator<EigenStepper<StepperExtensionList<DefaultExtension,
-                                               DenseEnvironmentExtension>,
-                          detail::HighestValidAuctioneer>,
-             Navigator>
-      prop(es, naviDet);
+  EigenStepper<DenseEnvironmentExtension> es(bField);
+  Propagator<EigenStepper<DenseEnvironmentExtension>, Navigator> prop(es,
+                                                                      naviDet);
 
   // Launch and collect results
   const auto& result = prop.propagate(sbtp, propOpts).value();
@@ -929,9 +894,8 @@ BOOST_AUTO_TEST_CASE(step_extension_vacmatvac_test) {
   propOptsDef.maxStepSize = 1.5_m;
 
   // Build stepper and propagator
-  EigenStepper<StepperExtensionList<DefaultExtension>> esDef(bField);
-  Propagator<EigenStepper<StepperExtensionList<DefaultExtension>>, Navigator>
-      propDef(esDef, naviDet);
+  EigenStepper<DefaultExtension> esDef(bField);
+  Propagator<EigenStepper<DefaultExtension>, Navigator> propDef(esDef, naviDet);
 
   // Launch and collect results
   const auto& resultDef =
@@ -983,10 +947,9 @@ BOOST_AUTO_TEST_CASE(step_extension_vacmatvac_test) {
   propOptsDense.maxStepSize = 1.5_m;
 
   // Build stepper and propagator
-  EigenStepper<StepperExtensionList<DenseEnvironmentExtension>> esDense(bField);
-  Propagator<EigenStepper<StepperExtensionList<DenseEnvironmentExtension>>,
-             Navigator>
-      propDense(esDense, naviDet);
+  EigenStepper<DenseEnvironmentExtension> esDense(bField);
+  Propagator<EigenStepper<DenseEnvironmentExtension>, Navigator> propDense(
+      esDense, naviDet);
 
   // Launch and collect results
   const auto& resultDense =
@@ -1112,15 +1075,8 @@ BOOST_AUTO_TEST_CASE(step_extension_trackercalomdt_test) {
 
   // Build stepper and propagator
   auto bField = std::make_shared<ConstantBField>(Vector3(0., 0., 0.));
-  EigenStepper<
-      StepperExtensionList<DefaultExtension, DenseEnvironmentExtension>,
-      detail::HighestValidAuctioneer>
-      es(bField);
-  Propagator<EigenStepper<StepperExtensionList<DefaultExtension,
-                                               DenseEnvironmentExtension>,
-                          detail::HighestValidAuctioneer>,
-             Navigator>
-      prop(es, naviVac);
+  EigenStepper<DefaultExtension> es(bField);
+  Propagator<EigenStepper<DefaultExtension>, Navigator> prop(es, naviVac);
 
   // Launch and collect results
   const auto& result = prop.propagate(sbtp, propOpts).value();
@@ -1158,5 +1114,6 @@ BOOST_AUTO_TEST_CASE(step_extension_trackercalomdt_test) {
     }
   }
 }
+
 }  // namespace Test
 }  // namespace Acts

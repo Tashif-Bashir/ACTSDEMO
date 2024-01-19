@@ -25,7 +25,6 @@
 #include "Acts/Propagator/MultiEigenStepperLoop.hpp"
 #include "Acts/Propagator/Navigator.hpp"
 #include "Acts/Propagator/Propagator.hpp"
-#include "Acts/Propagator/StepperExtensionList.hpp"
 #include "Acts/Surfaces/PlaneSurface.hpp"
 #include "Acts/Surfaces/Surface.hpp"
 #include "Acts/Utilities/Helpers.hpp"
@@ -58,9 +57,8 @@ using namespace Acts::VectorHelpers;
 const MagneticFieldContext magCtx;
 const GeometryContext geoCtx;
 
-using MultiStepperLoop =
-    MultiEigenStepperLoop<StepperExtensionList<DefaultExtension>>;
-using SingleStepper = EigenStepper<StepperExtensionList<DefaultExtension>>;
+using MultiStepperLoop = MultiEigenStepperLoop<DefaultExtension>;
+using SingleStepper = EigenStepper<DefaultExtension>;
 
 const double defaultStepSize = 123.;
 const auto defaultNDir = Direction::Backward;
