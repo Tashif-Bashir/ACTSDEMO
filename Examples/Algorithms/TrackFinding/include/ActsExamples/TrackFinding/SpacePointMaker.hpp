@@ -10,6 +10,7 @@
 
 #include "Acts/Geometry/GeometryIdentifier.hpp"
 #include "Acts/SpacePointFormation/SpacePointBuilder.hpp"
+#include "Acts/Surfaces/SurfaceContainer.hpp"
 #include "Acts/Utilities/Logger.hpp"
 #include "ActsExamples/EventData/IndexSourceLink.hpp"
 #include "ActsExamples/EventData/Measurement.hpp"
@@ -52,7 +53,8 @@ class SpacePointMaker final : public IAlgorithm {
     std::string inputMeasurements;
     /// Output space points collection.
     std::string outputSpacePoints;
-    /// Tracking geometry for transformation lookup.
+    /// Vector containing the geometry's surfaces.
+    std::vector<const Acts::Surface*> surfacePtrs;
     std::shared_ptr<const Acts::TrackingGeometry> trackingGeometry;
     /// For which part of the detector geometry should space points be created.
     ///

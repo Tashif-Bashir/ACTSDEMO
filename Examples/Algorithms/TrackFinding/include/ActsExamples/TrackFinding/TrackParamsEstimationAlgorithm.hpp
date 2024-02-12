@@ -63,7 +63,8 @@ class TrackParamsEstimationAlgorithm final : public IAlgorithm {
     /// Output prototrack collection - only tracks with successful parameter
     /// estimation are propagated (optional)
     std::string outputProtoTracks;
-    /// Tracking geometry for surface lookup.
+    /// Vector containing the geometry's surfaces.
+    std::vector<const Acts::Surface*> surfacePtrs;
     std::shared_ptr<const Acts::TrackingGeometry> trackingGeometry;
     /// Magnetic field variant.
     std::shared_ptr<const Acts::MagneticFieldProvider> magneticField;

@@ -210,7 +210,7 @@ BOOST_AUTO_TEST_CASE(DetectorConstruction) {
   findNull = det012->findDetectorVolume("Null");
   BOOST_CHECK_EQUAL(findNull, nullptr);
 
-  // Misconfigured - unkonnected finder
+  // Misconfigured - unconnected finder
   Acts::Experimental::DetectorVolumeUpdater unconnected;
   BOOST_CHECK_THROW(
       Acts::Experimental::Detector::makeShared("Det012_unconnected", volumes012,

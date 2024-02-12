@@ -11,6 +11,7 @@
 #include "Acts/EventData/SourceLink.hpp"
 #include "Acts/Geometry/TrackingGeometry.hpp"
 #include "Acts/Surfaces/Surface.hpp"
+#include "Acts/Surfaces/SurfaceContainer.hpp"
 #include "ActsExamples/EventData/GeometryContainers.hpp"
 #include "ActsExamples/EventData/Index.hpp"
 
@@ -36,10 +37,10 @@ class IndexSourceLink final {
   // Construct an invalid source link. Must be default constructible to
   /// satisfy SourceLinkConcept.
   IndexSourceLink() = default;
-  IndexSourceLink(const IndexSourceLink&) = default;
-  IndexSourceLink(IndexSourceLink&&) = default;
-  IndexSourceLink& operator=(const IndexSourceLink&) = default;
-  IndexSourceLink& operator=(IndexSourceLink&&) = default;
+  IndexSourceLink(const IndexSourceLink &) = default;
+  IndexSourceLink(IndexSourceLink &&) = default;
+  IndexSourceLink &operator=(const IndexSourceLink &) = default;
+  IndexSourceLink &operator=(IndexSourceLink &&) = default;
 
   /// Access the index.
   constexpr Index index() const { return m_index; }
@@ -47,11 +48,32 @@ class IndexSourceLink final {
   Acts::GeometryIdentifier geometryId() const { return m_geometryId; }
 
   struct SurfaceAccessor {
-    const Acts::TrackingGeometry& trackingGeometry;
+   private:
+    std::vector<const Acts::Surface *> surfaceVec;
 
-    const Acts::Surface* operator()(const Acts::SourceLink& sourceLink) const {
-      const auto& indexSourceLink = sourceLink.get<IndexSourceLink>();
-      return trackingGeometry.findSurface(indexSourceLink.geometryId());
+    std::vector<const Acts::Surface *> getVec(
+        const Acts::TrackingGeometry &tGeometry) {
+      Acts::TrackingGeometryPtr tGeoPtr =
+          std::make_shared<const Acts::TrackingGeometry>(tGeometry);
+      Acts::SurfaceContainer container(tGeoPtr);
+      return container.surfacePtrs();
+    }
+
+   public:
+    SurfaceAccessor(const Acts::TrackingGeometry &tGeometry)
+        : surfaceVec(getVec(tGeometry)) {}
+    SurfaceAccessor(const std::vector<const Acts::Surface *> &surfVec)
+        : surfaceVec(surfVec) {}
+
+    const Acts::Surface *operator()(const Acts::SourceLink &sourceLink) const {
+      const auto &testSourceLink = sourceLink.get<IndexSourceLink>();
+      auto g_ID = testSourceLink.m_geometryId;
+      for (auto &surf : surfaceVec) {
+        if (surf->geometryId() == g_ID) {
+          return surf;
+        }
+      }
+      return nullptr;
     }
   };
 
@@ -59,13 +81,13 @@ class IndexSourceLink final {
   Acts::GeometryIdentifier m_geometryId;
   Index m_index = 0;
 
-  friend bool operator==(const IndexSourceLink& lhs,
-                         const IndexSourceLink& rhs) {
+  friend bool operator==(const IndexSourceLink &lhs,
+                         const IndexSourceLink &rhs) {
     return (lhs.geometryId() == rhs.geometryId()) &&
            (lhs.m_index == rhs.m_index);
   }
-  friend bool operator!=(const IndexSourceLink& lhs,
-                         const IndexSourceLink& rhs) {
+  friend bool operator!=(const IndexSourceLink &lhs,
+                         const IndexSourceLink &rhs) {
     return !(lhs == rhs);
   }
 };
@@ -85,7 +107,7 @@ struct IndexSourceLinkAccessor : GeometryIdMultisetAccessor<IndexSourceLink> {
   using Iterator = Acts::SourceLinkAdapterIterator<BaseIterator>;
 
   // get the range of elements with requested geoId
-  std::pair<Iterator, Iterator> range(const Acts::Surface& surface) const {
+  std::pair<Iterator, Iterator> range(const Acts::Surface &surface) const {
     assert(container != nullptr);
     auto [begin, end] = container->equal_range(surface.geometryId());
     return {Iterator{begin}, Iterator{end}};

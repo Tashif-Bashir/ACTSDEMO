@@ -43,8 +43,8 @@ ActsExamples::TrackParamsEstimationAlgorithm::TrackParamsEstimationAlgorithm(
   if (m_cfg.outputTrackParameters.empty()) {
     throw std::invalid_argument("Missing track parameters output collection");
   }
-  if (!m_cfg.trackingGeometry) {
-    throw std::invalid_argument("Missing tracking geometry");
+  if (m_cfg.surfacePtrs.empty() && !m_cfg.trackingGeometry) {
+    throw std::invalid_argument("Missing surface pointers");
   }
   if (!m_cfg.magneticField) {
     throw std::invalid_argument("Missing magnetic field");
@@ -89,10 +89,11 @@ ActsExamples::ProcessCode ActsExamples::TrackParamsEstimationAlgorithm::execute(
     outputTracks.emplace();
     outputTracks->reserve(seeds.size());
   }
-
   auto bCache = m_cfg.magneticField->makeCache(ctx.magFieldContext);
-
-  IndexSourceLink::SurfaceAccessor surfaceAccessor{*m_cfg.trackingGeometry};
+  IndexSourceLink::SurfaceAccessor surfaceAccessor =
+      !m_cfg.trackingGeometry
+          ? IndexSourceLink::SurfaceAccessor{m_cfg.surfacePtrs}
+          : IndexSourceLink::SurfaceAccessor{*m_cfg.trackingGeometry};
 
   // Loop over all found seeds to estimate track parameters
   for (std::size_t iseed = 0; iseed < seeds.size(); ++iseed) {
