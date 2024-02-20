@@ -9,8 +9,8 @@ if(POLICY CMP0135)
 endif()
 
 # Declare where to get VecMem from.
-set( ACTS_NLOHMANN_JSON_GIT_TAG "v3.10.5" CACHE STRING "Version of nlohmann_json to build" )
-set( ACTS_NLOHMANN_JSON_SHA1 "8969f5ad1a422e01f040ff48dcae9c0e6ad0811d" CACHE STRING "SHA1 hash of the downloaded zip" )
+set( ACTS_NLOHMANN_JSON_GIT_TAG "v3.11.3" CACHE STRING "Version of nlohmann_json to build" )
+set( ACTS_NLOHMANN_JSON_SHA1 "2074caa675f8097d9b03c0f4976ffc3410170937" CACHE STRING "SHA1 hash of the downloaded zip" )
 mark_as_advanced( ACTS_NLOHMANN_JSON_GIT_REPOSITORY ACTS_NLOHMANN_JSON_GIT_TAG )
 FetchContent_Declare( nlohmann_json
    URL "https://github.com/nlohmann/json/archive/refs/tags/${ACTS_NLOHMANN_JSON_GIT_TAG}.tar.gz"
