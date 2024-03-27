@@ -21,6 +21,7 @@
 #include "Acts/MagneticField/MagneticFieldContext.hpp"
 #include "Acts/MagneticField/NullBField.hpp"
 #include "Acts/Propagator/ConstrainedStep.hpp"
+#include "Acts/Propagator/PropagatorTraits.hpp"
 #include "Acts/Propagator/detail/SteppingHelper.hpp"
 #include "Acts/Surfaces/BoundaryCheck.hpp"
 #include "Acts/Surfaces/Surface.hpp"
@@ -263,15 +264,15 @@ class StraightLineStepper {
                                                       release);
   }
 
-  /// Set Step size - explicitly with a double
+  /// Update step size - explicitly with a double
   ///
   /// @param state [in,out] The stepping state (thread-local cache)
   /// @param stepSize [in] The step size value
   /// @param stype [in] The step size type to be set
   /// @param release [in] Do we release the step size?
-  void setStepSize(State& state, double stepSize,
-                   ConstrainedStep::Type stype = ConstrainedStep::actor,
-                   bool release = true) const {
+  void updateStepSize(State& state, double stepSize,
+                      ConstrainedStep::Type stype = ConstrainedStep::actor,
+                      bool release = true) const {
     state.previousStepSize = state.stepSize.value();
     state.stepSize.update(stepSize, stype, release);
   }
@@ -286,9 +287,10 @@ class StraightLineStepper {
 
   /// Release the Step size
   ///
-  /// @param state [in,out] The stepping state (thread-local cache)
-  void releaseStepSize(State& state) const {
-    state.stepSize.release(ConstrainedStep::actor);
+  /// @param [in,out] state The stepping state (thread-local cache)
+  /// @param [in] stype The step size type to be released
+  void releaseStepSize(State& state, ConstrainedStep::Type stype) const {
+    state.stepSize.release(stype);
   }
 
   /// Output the Step Size - single component
@@ -316,6 +318,36 @@ class StraightLineStepper {
       State& state, const Surface& surface, bool transportCov = true,
       const FreeToBoundCorrection& freeToBoundCorrection =
           FreeToBoundCorrection(false)) const;
+
+  /// @brief If necessary fill additional members needed for curvilinearState
+  ///
+  /// Compute path length derivatives in case they have not been computed
+  /// yet, which is the case if no step has been executed yet.
+  ///
+  /// @param [in, out] prop_state State that will be presented as @c BoundState
+  /// @param [in] navigator the navigator of the propagation
+  /// @return true if nothing is missing after this call, false otherwise.
+  template <typename propagator_state_t, typename navigator_t>
+  bool prepareCurvilinearState(
+      [[maybe_unused]] propagator_state_t& prop_state,
+      [[maybe_unused]] const navigator_t& navigator) const {
+    // test whether the accumulated path has still its initial value.
+    if (prop_state.stepping.pathAccumulated == 0.) {
+      // dr/ds :
+      prop_state.stepping.derivative.template head<3>() =
+          direction(prop_state.stepping);
+      // dt / ds
+      prop_state.stepping.derivative(eFreeTime) =
+          std::hypot(1., prop_state.stepping.particleHypothesis.mass() /
+                             absoluteMomentum(prop_state.stepping));
+      // d (dr/ds) / ds : == 0
+      prop_state.stepping.derivative.template segment<3>(4) =
+          Acts::Vector3::Zero().transpose();
+      // d qop / ds  == 0
+      prop_state.stepping.derivative(eFreeQOverP) = 0.;
+    }
+    return true;
+  }
 
   /// Create and return a curvilinear state at the current position
   ///
@@ -423,5 +455,9 @@ class StraightLineStepper {
  private:
   double m_overstepLimit = s_onSurfaceTolerance;
 };
+
+template <typename navigator_t>
+struct SupportsBoundParameters<StraightLineStepper, navigator_t>
+    : public std::true_type {};
 
 }  // namespace Acts

@@ -34,7 +34,9 @@
 #include <functional>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <string>
+#include <variant>
 #include <vector>
 
 #include <tbb/combinable.h>
@@ -94,7 +96,9 @@ class TrackFindingAlgorithm final : public IAlgorithm {
     /// Compute shared hit information
     bool computeSharedHits = false;
     /// Track selector config
-    std::optional<Acts::TrackSelector::Config> trackSelectorCfg = std::nullopt;
+    std::optional<std::variant<Acts::TrackSelector::Config,
+                               Acts::TrackSelector::EtaBinnedConfig>>
+        trackSelectorCfg = std::nullopt;
     /// Run backward finding
     bool backward = false;
     /// Maximum number of propagation steps
@@ -138,8 +142,8 @@ class TrackFindingAlgorithm final : public IAlgorithm {
 
   WriteDataHandle<ConstTrackContainer> m_outputTracks{this, "OutputTracks"};
 
-  mutable std::atomic<size_t> m_nTotalSeeds{0};
-  mutable std::atomic<size_t> m_nFailedSeeds{0};
+  mutable std::atomic<std::size_t> m_nTotalSeeds{0};
+  mutable std::atomic<std::size_t> m_nFailedSeeds{0};
 
   mutable tbb::combinable<Acts::VectorMultiTrajectory::Statistics>
       m_memoryStatistics{[]() {

@@ -63,7 +63,7 @@ std::vector<Acts::DigitizationStep> Acts::PlanarModuleStepper::cellSteps(
       Intersection3D(endPoint, (startPoint - endPoint).norm(),
                      Intersection3D::Status::reachable));
   std::sort(stepIntersections.begin(), stepIntersections.end(),
-            Intersection3D::forwardOrder);
+            Intersection3D::pathLengthOrder);
 
   Vector3 lastPosition = startPoint;
   // reserve the right amount
@@ -87,7 +87,7 @@ std::vector<Acts::DigitizationStep> Acts::PlanarModuleStepper::cellSteps(
   // intersect them - fast exit for cases where
   // readout and counter readout are hit
   Vector3 intersection3D(moduleIntersection.x(), moduleIntersection.y(), 0.);
-  size_t attempts = 0;
+  std::size_t attempts = 0;
   // the collected intersections
   std::vector<Acts::Intersection3D> boundaryIntersections;
   // run them - and check for the fast exit
@@ -121,7 +121,7 @@ std::vector<Acts::DigitizationStep> Acts::PlanarModuleStepper::cellSteps(
         "More than 2 Boundary Surfaces intersected, this is an edge "
         "case, resolving ... ");
     std::sort(boundaryIntersections.begin(), boundaryIntersections.end(),
-              Intersection3D::forwardOrder);
+              Intersection3D::pathLengthOrder);
   }
   // if for some reason the intersection does not work
   if (boundaryIntersections.empty()) {
