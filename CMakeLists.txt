@@ -189,6 +189,10 @@ if(ACTS_FORCE_ASSERTIONS)
   include_directories(BEFORE SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/cmake/assert_include)
 endif()
 
+
+# Include the sources for the external dependencies.
+include(ActsExternSources)
+
 # minimal dependency versions. they are defined here in a single place so
 # they can be easily upgraded, although they might not be used if the
 # dependency is included via `add_subdirectory(...)`.
