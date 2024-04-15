@@ -24,5 +24,11 @@ set( VECMEM_BUILD_TESTING FALSE CACHE BOOL
 set( VECMEM_BUILD_BENCHMARKING FALSE CACHE BOOL
    "Turn off the build of VecMem benchmarking" )   
 
+# Options used in the build of VecMem.
+set( VECMEM_BUILD_TESTING FALSE CACHE BOOL
+   "Turn off the build of the VecMem unit tests" )
+set( VECMEM_BUILD_BENCHMARKING FALSE CACHE BOOL
+   "Turn off the build of VecMem benchmarking" )   
+
 # Now set up its build.
 FetchContent_MakeAvailable( VecMem )

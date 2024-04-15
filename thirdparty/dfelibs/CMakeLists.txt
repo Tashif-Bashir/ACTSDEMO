@@ -17,5 +17,13 @@ set( dfelibs_BUILD_UNITTESTS OFF CACHE BOOL
 set( dfelibs_ENABLE_INSTALL ON CACHE BOOL
    "Have dfelibs be installed together with the rest of the project" )
 
+# Options used in the build of dfelibs.
+set( dfelibs_BUILD_EXAMPLES OFF CACHE BOOL
+   "Turn off the build of the dfelibs examples" )
+set( dfelibs_BUILD_UNITTESTS OFF CACHE BOOL
+   "Turn off the build of the dfelibs unit tests" )
+set( dfelibs_ENABLE_INSTALL ON CACHE BOOL
+   "Have dfelibs be installed together with the rest of the project" )
+
 # Now set up its build.
 FetchContent_MakeAvailable( dfelibs )
