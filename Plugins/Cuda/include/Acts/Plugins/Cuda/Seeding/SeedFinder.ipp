@@ -7,6 +7,7 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "Acts/Seeding/CandidatesForMiddleSp.hpp"
+#include "Acts/Seeding/ContainerPolicy.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -310,9 +311,10 @@ SeedFinder<external_spacepoint_t, Acts::Cuda>::createSeedsForGroup(
                 CandidatesForMiddleSp<const InternalSpacePoint<
                     external_spacepoint_t>>::descendingByQuality);
       std::size_t numQualitySeeds = 0;  // not used but needs to be fixed
+      VectorPolicy seed_policy_container(outputVec);
+      GenericBackInserter back_inserter(seed_policy_container);
       m_config.seedFilter->filterSeeds_1SpFixed(spacePointData, candidates,
-                                                numQualitySeeds,
-                                                std::back_inserter(outputVec));
+                                                numQualitySeeds, back_inserter);
     }
   }
   ACTS_CUDA_ERROR_CHECK(cudaStreamDestroy(cuStream));
