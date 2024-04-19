@@ -312,9 +312,11 @@ ActsExamples::ProcessCode ActsExamples::SeedingAlgorithm::execute(
   }
 
   for (const auto [bottom, middle, top] : spacePointsGrouping) {
-    m_seedFinder.createSeedsForGroup(
-        m_cfg.seedFinderOptions, state, spacePointsGrouping.grid(),
-        std::back_inserter(seeds), bottom, middle, top, rMiddleSPRange);
+    VectorPolicy out_policy_cont(seeds);
+    GenericBackInserter back_inserter(out_policy_cont);
+    m_seedFinder.createSeedsForGroup(m_cfg.seedFinderOptions, state,
+                                     spacePointsGrouping.grid(), back_inserter,
+                                     bottom, middle, top, rMiddleSPRange);
   }
 
   ACTS_DEBUG("Created " << seeds.size() << " track seeds from "
