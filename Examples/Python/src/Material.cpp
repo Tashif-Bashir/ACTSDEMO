@@ -53,7 +53,7 @@ void addMaterial(Context& ctx) {
                std::shared_ptr<Acts::IMaterialDecorator>>(m,
                                                           "IMaterialDecorator");
   }
-
+  
   {
     auto rmd =
         py::class_<RootMaterialDecorator, Acts::IMaterialDecorator,
