@@ -19,6 +19,7 @@
 
 // Acts include(s).
 #include "Acts/Seeding/CandidatesForMiddleSp.hpp"
+#include "Acts/Seeding/ContainerPolicy.hpp"
 #include "Acts/Seeding/InternalSeed.hpp"
 #include "Acts/Seeding/InternalSpacePoint.hpp"
 
@@ -231,9 +232,10 @@ SeedFinder<external_spacepoint_t>::createSeedsForGroup(
         CandidatesForMiddleSp<const InternalSpacePoint<external_spacepoint_t>>::
             descendingByQuality);
     std::size_t numQualitySeeds = 0;  // not used but needs to be fixed
+    VectorPolicy seed_policy_container(outputVec);
+    GenericBackInserter back_inserter(seed_policy_container);
     m_commonConfig.seedFilter->filterSeeds_1SpFixed(
-        spacePointData, candidates, numQualitySeeds,
-        std::back_inserter(outputVec));
+        spacePointData, candidates, numQualitySeeds, back_inserter);
   }
 
   // Free up all allocated device memory.
