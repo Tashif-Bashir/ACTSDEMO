@@ -1,2 +1,2 @@
 set(unittest_extra_libraries ActsPluginCovfie)
-add_unittest(CovfieSetup CovfieSetup.cpp)
+add_unittest(CovfieConversion CovfieConversionTest.cpp)

@@ -18,7 +18,7 @@ namespace Acts::CovfieConversion{
 /// @return 
 template <typename cache_t>
 auto fieldLookup(const Acts::InterpolatedMagneticField& magneticField, [[maybe_unused]] cache_t& cache, const Acts::Vector3& position){
-    return magneticField.getFieldUnchecked(position);;
+    return magneticField.getFieldUnchecked(position);
 }
 
 /// @brief Get the value of the field at a specific position of a general magnetic field.
@@ -46,7 +46,6 @@ auto fieldLookup(const Acts::MagneticFieldProvider& magneticField, cache_t& cach
 /// @return A strided covfie field.
 template <typename magnetic_field_t, typename cache_t, typename point3_1_t, typename point3_2_t, typename point3_3_t>
 auto newBuilder(const magnetic_field_t& magneticField, cache_t& cache, const point3_1_t& nBins, const point3_2_t& min, const point3_3_t& max){
-
     using field_t = covfie::field<builder_backend_t>;
 
     field_t field(covfie::make_parameter_pack(
@@ -111,15 +110,20 @@ auto affineConfiguration(const point3_1_t& nBins, const point3_2_t& min, const p
 /// @param nBins 3D array of containing the number of bins for each axis.
 /// @param min (min_x, min_y, min_z)
 /// @param max (max_x, max_y, max_z)
-/// @return An affine linear strided covfie field.
+/// @return A clamp affine linear strided covfie field.
 template <typename magnetic_field_t, typename cache_t, typename point3_1_t, typename point3_2_t, typename point3_3_t>
-affine_linear_strided_field_t covfieFieldLinear(const magnetic_field_t& magneticField, cache_t& cache, const point3_1_t& nBins, const point3_2_t& min, const point3_3_t& max){
+interpolated_field_t covfieFieldLinear(const magnetic_field_t& magneticField, cache_t& cache, const point3_1_t& nBins, const point3_2_t& min, const point3_3_t& max){
     auto builder = newBuilder(magneticField, cache, nBins, min, max);
+    interpolated_field_t::backend_t::configuration_t clampConfiguration{
+        {std::nextafter(static_cast<float>(min[0]), std::numeric_limits<float>::infinity()), std::nextafter(static_cast<float>(min[1]), std::numeric_limits<float>::infinity()), std::nextafter(static_cast<float>(min[2]), std::numeric_limits<float>::infinity())},
+        {std::nextafter(static_cast<float>(max[0]), -std::numeric_limits<float>::infinity()), std::nextafter(static_cast<float>(max[1]), -std::numeric_limits<float>::infinity()), std::nextafter(static_cast<float>(max[2]), -std::numeric_limits<float>::infinity())}
+        };
 
-    affine_linear_strided_field_t field(
+    interpolated_field_t field(
         covfie::make_parameter_pack(
-        affineConfiguration<affine_linear_strided_field_t::backend_t>(nBins, min, max),
-        affine_linear_strided_field_t::backend_t::backend_t::configuration_t{},
+        std::move(clampConfiguration),
+        affineConfiguration<interpolated_field_t::backend_t::backend_t>(nBins, min, max),
+        interpolated_field_t::backend_t::backend_t::backend_t::configuration_t{},
         builder.backend()
     ));
 
@@ -132,15 +136,15 @@ affine_linear_strided_field_t covfieFieldLinear(const magnetic_field_t& magnetic
 /// @param nBins 3D array of containing the number of bins for each axis.
 /// @param min (min_x, min_y, min_z)
 /// @param max (max_x, max_y, max_z)
-/// @return An affine linear strided covfie field.
-affine_linear_strided_field_t covfieField(const Acts::MagneticFieldProvider& magneticField, Acts::MagneticFieldProvider::Cache& cache, const std::vector<std::size_t>& nBins, const std::vector<double>& min, const std::vector<double>& max){
+/// @return A clamp affine linear strided covfie field.
+interpolated_field_t covfieField(const Acts::MagneticFieldProvider& magneticField, Acts::MagneticFieldProvider::Cache& cache, const std::vector<std::size_t>& nBins, const std::vector<double>& min, const std::vector<double>& max){
     return covfieFieldLinear(magneticField, cache, nBins, min, max);
 }
 
 /// @brief Creates a covfie field from an interpolated magnetic field.
 /// @param magneticField The acts interpolated magnetic field.
-/// @return An affine linear strided covfie field.
-affine_linear_strided_field_t covfieField(const Acts::InterpolatedMagneticField& magneticField){
+/// @return A clamp affine linear strided covfie field.
+interpolated_field_t covfieField(const Acts::InterpolatedMagneticField& magneticField){
     Acts::MagneticFieldContext ctx;
     auto cache = magneticField.makeCache(ctx);
     return covfieFieldLinear(magneticField, cache, magneticField.getNBins(), magneticField.getMin(), magneticField.getMax());
