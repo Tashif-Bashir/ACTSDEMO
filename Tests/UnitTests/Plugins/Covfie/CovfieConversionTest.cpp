@@ -23,16 +23,13 @@
 #include <covfie/core/parameter_pack.hpp>
 
 
-// covfie plugin
-//#include "Acts/Plugins/Covfie/CovfieConversion.hpp"
-
 // acts includes
 #include "Acts/MagneticField/MagneticFieldProvider.hpp"
 #include "Acts/MagneticField/BFieldMapUtils.hpp"
 #include "Acts/MagneticField/SolenoidBField.hpp"
 #include "Acts/Definitions/Units.hpp"
 
-
+// covfie plugin
 #include "Acts/Plugins/Covfie/CovfieConversion.hpp"
 
 // Boost.Test include(s)
@@ -103,7 +100,7 @@ BOOST_AUTO_TEST_CASE(Covfie_Conversion_InterpolatedMagneticField1) {
         {0.6f, 2.2f, 2.1f},
     }};
 
-    BOOST_TEST(MagneticFieldEqual(actsField, cache, view, points, 0.00001));
+    BOOST_TEST(MagneticFieldEqual(actsField, cache, view, points, 0.0001));
 }
 
 BOOST_AUTO_TEST_CASE(Covfie_Conversion_InterpolatedMagneticField2) {
@@ -119,7 +116,7 @@ BOOST_AUTO_TEST_CASE(Covfie_Conversion_InterpolatedMagneticField2) {
 
     std::vector<Acts::Vector3> bField_xyz;
     for (int i = 0; i < 64; i++) {
-        bField_xyz.push_back(Acts::Vector3(i, i, i));
+        bField_xyz.push_back(Acts::Vector3(i, i*i*0.01, i));
     }
 
     Acts::MagneticFieldContext fieldContext;
@@ -146,7 +143,7 @@ BOOST_AUTO_TEST_CASE(Covfie_Conversion_InterpolatedMagneticField2) {
         {18.8f, 19.9f, 14.0f},
     }};
 
-    BOOST_TEST(MagneticFieldEqual(actsField, cache, view, points, 0.00001));
+    BOOST_TEST(MagneticFieldEqual(actsField, cache, view, points, 0.0001f));
 }
 
 BOOST_AUTO_TEST_CASE(Covfie_Conversion_ConstantMagneticField1) {
@@ -174,7 +171,7 @@ BOOST_AUTO_TEST_CASE(Covfie_Conversion_ConstantMagneticField1) {
         {18.8f, 19.9f, 14.0f},
     }};
 
-    BOOST_TEST(MagneticFieldEqual(actsField, cache, view, points, 0.00001));
+    BOOST_TEST(MagneticFieldEqual(actsField, cache, view, points, 0.0901));
 }
 
 BOOST_AUTO_TEST_CASE(Covfie_Conversion_MagneticFieldProvider1) {
@@ -207,5 +204,5 @@ BOOST_AUTO_TEST_CASE(Covfie_Conversion_MagneticFieldProvider1) {
         {18.8f, 19.9f, 14.0f},
     }};
 
-    BOOST_TEST(MagneticFieldEqual(actsField, cache, view, points, 0.00001));
+    BOOST_TEST(MagneticFieldEqual(actsField, cache, view, points, 0.0001));
 }

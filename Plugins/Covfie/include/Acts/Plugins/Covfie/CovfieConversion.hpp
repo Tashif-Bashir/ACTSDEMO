@@ -14,6 +14,7 @@
 #include <covfie/core/backend/transformer/linear.hpp>
 #include <covfie/core/backend/transformer/affine.hpp>
 #include <covfie/core/backend/transformer/strided.hpp>
+#include <covfie/core/backend/transformer/clamp.hpp>
 #include <covfie/core/field.hpp>
 #include <covfie/core/field_view.hpp>
 #include <covfie/core/parameter_pack.hpp>
@@ -29,14 +30,14 @@ using builder_backend_t = covfie::backend::strided<
     covfie::vector::size3,
     covfie::backend::array<covfie::vector::float3>>;
 
-using affine_linear_strided_field_t = covfie::field<covfie::backend::affine<covfie::backend::linear<builder_backend_t>>>;
+using interpolated_field_t = covfie::field<covfie::backend::clamp<covfie::backend::affine<covfie::backend::linear<builder_backend_t>>>>;
 
 using constant_field_t = covfie::field<covfie::backend::constant<covfie::vector::size3, covfie::vector::float3>>;
 
 /// @brief Creates a covfie field from an interpolated magnetic field.
 /// @param magneticField The acts interpolated magnetic field.
 /// @return An affine linear strided covfie field.
-affine_linear_strided_field_t covfieField(const Acts::InterpolatedMagneticField& magneticField);
+interpolated_field_t covfieField(const Acts::InterpolatedMagneticField& magneticField);
 
 /// @brief Creates a covfie field from a constant B field.
 /// @param magneticField The acts constant magnetic field.
@@ -50,6 +51,6 @@ constant_field_t covfieField(const Acts::ConstantBField& magneticField);
 /// @param min (min_x, min_y, min_z)
 /// @param max (max_x, max_y, max_z)
 /// @return An affine linear strided covfie field.
-affine_linear_strided_field_t covfieField(const Acts::MagneticFieldProvider& magneticField, Acts::MagneticFieldProvider::Cache& cache, const std::vector<std::size_t>& nBins, const std::vector<double>& min, const std::vector<double>& max);
+interpolated_field_t covfieField(const Acts::MagneticFieldProvider& magneticField, Acts::MagneticFieldProvider::Cache& cache, const std::vector<std::size_t>& nBins, const std::vector<double>& min, const std::vector<double>& max);
 
 };

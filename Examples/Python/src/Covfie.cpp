@@ -39,7 +39,7 @@ void addCovfie(Context& ctx) {
   auto m = main.def_submodule("covfie_conversion", "Submodule for covfie conversion");
 
   declareCovfieField<Acts::CovfieConversion::constant_field_t>(m, "CovfieConstantField");
-  declareCovfieField<Acts::CovfieConversion::affine_linear_strided_field_t>(m, "CovfieAffineLinearStridedField");
+  declareCovfieField<Acts::CovfieConversion::interpolated_field_t>(m, "CovfieAffineLinearStridedField");
 
   m.def("covfieField", py::overload_cast<const Acts::InterpolatedMagneticField&>(&Acts::CovfieConversion::covfieField));
   m.def("covfieField", py::overload_cast<const Acts::ConstantBField&>(&Acts::CovfieConversion::covfieField));
