@@ -312,10 +312,10 @@ ActsExamples::ProcessCode ActsExamples::SeedingAlgorithm::execute(
   }
 
   for (const auto [bottom, middle, top] : spacePointsGrouping) {
-    VectorPolicy out_policy_cont(seeds);
-    GenericBackInserter back_inserter(out_policy_cont);
+    VectorPolicy outPolicyContainer(seeds);
+    GenericBackInserter backInserter(outPolicyContainer);
     m_seedFinder.createSeedsForGroup(m_cfg.seedFinderOptions, state,
-                                     spacePointsGrouping.grid(), back_inserter,
+                                     spacePointsGrouping.grid(), backInserter,
                                      bottom, middle, top, rMiddleSPRange);
   }
 

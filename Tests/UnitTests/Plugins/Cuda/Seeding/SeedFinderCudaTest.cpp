@@ -289,10 +289,10 @@ int main(int argc, char** argv) {
     state.spacePointData.resize(spVec.size());
     for (; groupIt != spGroup.end(); ++groupIt) {
       const auto [bottom, middle, top] = *groupIt;
-      VectorPolicy seed_policy_container(seedVector_cpu.emplace_back());
-      GenericBackInserter back_inserter(seed_policy_container);
+      VectorPolicy seedPolicyContainer(seedVector_cpu.emplace_back());
+      GenericBackInserter backInserter(seedPolicyContainer);
       seedFinder_cpu.createSeedsForGroup(options, state, spGroup.grid(),
-                                         back_inserter, bottom, middle, top,
+                                         backInserter, bottom, middle, top,
                                          rMiddleSPRange);
       group_count++;
       if (allgroup == false) {

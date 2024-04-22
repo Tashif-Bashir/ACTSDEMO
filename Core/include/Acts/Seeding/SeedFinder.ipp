@@ -836,8 +836,11 @@ SeedFinder<external_spacepoint_t, grid_t, platform_t>::createSeedsForGroup(
   const Acts::Range1D<float> rMiddleSPRange;
   std::vector<Seed<external_spacepoint_t>> ret;
 
-  createSeedsForGroup(options, state, grid, std::back_inserter(ret), bottomSPs,
-                      middleSPs, topSPs, rMiddleSPRange);
+  VectorPolicy outPolicyContainer(ret);
+  GenericBackInserter backInserter(outPolicyContainer);
+
+  createSeedsForGroup(options, state, grid, backInserter, bottomSPs, middleSPs,
+                      topSPs, rMiddleSPRange);
 
   return ret;
 }
