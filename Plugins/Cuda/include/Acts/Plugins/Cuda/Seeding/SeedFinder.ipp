@@ -311,10 +311,10 @@ SeedFinder<external_spacepoint_t, Acts::Cuda>::createSeedsForGroup(
                 CandidatesForMiddleSp<const InternalSpacePoint<
                     external_spacepoint_t>>::descendingByQuality);
       std::size_t numQualitySeeds = 0;  // not used but needs to be fixed
-      VectorPolicy seed_policy_container(outputVec);
-      GenericBackInserter back_inserter(seed_policy_container);
+      VectorPolicy seedPolicyContainer(outputVec);
+      GenericBackInserter backInserter(seedPolicyContainer);
       m_config.seedFilter->filterSeeds_1SpFixed(spacePointData, candidates,
-                                                numQualitySeeds, back_inserter);
+                                                numQualitySeeds, backInserter);
     }
   }
   ACTS_CUDA_ERROR_CHECK(cudaStreamDestroy(cuStream));

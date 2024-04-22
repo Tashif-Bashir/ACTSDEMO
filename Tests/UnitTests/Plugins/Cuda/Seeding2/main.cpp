@@ -201,10 +201,10 @@ int main(int argc, char* argv[]) {
       auto& group = seeds_host.emplace_back();
       auto [bottom, middle, top] = *spGroup_itr;
 
-      VectorPolicy seed_policy_container(group);
-      GenericBackInserter back_inserter(seed_policy_container);
+      VectorPolicy seedPolicyContainer(group);
+      GenericBackInserter backInserter(seedPolicyContainer);
       seedFinder_host.createSeedsForGroup(sfOptions, state, spGroup.grid(),
-                                          back_inserter, bottom, middle, top,
+                                          backInserter, bottom, middle, top,
                                           rMiddleSPRange);
     }
   }

@@ -212,9 +212,9 @@ int main(int argc, char** argv) {
   auto start = std::chrono::system_clock::now();
   for (auto [bottom, middle, top] : spGroup) {
     auto& v = seedVector.emplace_back();
-    VectorPolicy seed_policy_container(v);
-    GenericBackInserter back_inserter(seed_policy_container);
-    a.createSeedsForGroup(options, state, spGroup.grid(), back_inserter, bottom,
+    VectorPolicy seedPolicyContainer(v);
+    GenericBackInserter backInserter(seedPolicyContainer);
+    a.createSeedsForGroup(options, state, spGroup.grid(), backInserter, bottom,
                           middle, top, rMiddleSPRange);
   }
   auto end = std::chrono::system_clock::now();
