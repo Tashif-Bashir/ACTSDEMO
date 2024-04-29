@@ -173,27 +173,6 @@ inline bool operator==(const SimSpacePoint& lhs, const SimSpacePoint& rhs) {
           (lhs.varianceT() == rhs.varianceT()));
 }
 
-inline bool operator<(const SimSpacePoint& lhs, const SimSpacePoint& rhs) {
-  // TODO would it be sufficient to check just the index under the assumption
-  //   that the same measurement index always produces the same space point?
-  // no need to check r since it is fully defined by x/y
-  if ((lhs.x() == rhs.x()) and (lhs.y() == rhs.y()) and (lhs.z() == rhs.z()) and
-      (lhs.varianceR() == rhs.varianceR()) and
-      (lhs.varianceZ() == rhs.varianceZ())) {
-    return false;
-  }
-  if (lhs.x() != rhs.x()) {
-    return (lhs.x() < rhs.x());
-  }
-  if (lhs.y() != rhs.y()) {
-    return (lhs.y() < rhs.y());
-  }
-  if (lhs.z() != rhs.z()) {
-    return (lhs.z() < rhs.z());
-  }
-  return false;
-}
-
 /// Container of space points.
 using SimSpacePointContainer = std::vector<SimSpacePoint>;
 
