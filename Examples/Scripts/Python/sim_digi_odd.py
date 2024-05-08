@@ -216,8 +216,8 @@ else:
             if args.ttbar
             else ParticleSelectorConfig(),
             enableInteractions=True,
-            outputDirRoot=outputDir,
-            outputDirCsv=outputDir,
+            outputDirRoot=outputDir if args.output_root else None,
+            outputDirCsv=outputDir if args.output_csv else None,
             rnd=rnd,
         )
 
