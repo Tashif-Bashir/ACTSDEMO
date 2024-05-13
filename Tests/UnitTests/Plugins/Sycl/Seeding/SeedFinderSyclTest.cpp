@@ -10,6 +10,7 @@
 #include "Acts/Plugins/Sycl/Seeding/SeedFinder.hpp"
 #include "Acts/Plugins/Sycl/Utilities/QueueWrapper.hpp"
 #include "Acts/Seeding/BinnedGroup.hpp"
+#include "Acts/Seeding/ContainerPolicy.hpp"
 #include "Acts/Seeding/InternalSeed.hpp"
 #include "Acts/Seeding/InternalSpacePoint.hpp"
 #include "Acts/Seeding/Seed.hpp"
@@ -229,10 +230,11 @@ auto main(int argc, char** argv) -> int {
   if (!cmdlTool.onlyGpu) {
     decltype(normalSeedFinder)::SeedingState state;
     for (auto [bottom, middle, top] : spGroup) {
-      normalSeedFinder.createSeedsForGroup(
-          options, state, spGroup.grid(),
-          std::back_inserter(seedVector_cpu.emplace_back()), bottom, middle,
-          top, rMiddleSPRange);
+      VectorPolicy seedPolicyContainer(seedVector_cpu.emplace_back());
+      GenericBackInserter backInserter(seedPolicyContainer);
+      normalSeedFinder.createSeedsForGroup(options, state, spGroup.grid(),
+                                           backInserter, bottom, middle, top,
+                                           rMiddleSPRange);
       group_count++;
       if (!cmdlTool.allgroup && group_count >= cmdlTool.groups) {
         break;
