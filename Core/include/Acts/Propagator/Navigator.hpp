@@ -201,6 +201,8 @@ class Navigator {
   State makeState(const Options& options) const {
     State state;
     state.options = options;
+    state.startSurface = options.startSurface;
+    state.targetSurface = options.targetSurface;
     return state;
   }
 
