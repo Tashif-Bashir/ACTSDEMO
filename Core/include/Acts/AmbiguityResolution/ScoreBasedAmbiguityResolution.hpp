@@ -159,8 +159,8 @@ class ScoreBasedAmbiguityResolution {
   std::vector<double> simpleScore(
       const track_container_t& tracks,
       const std::vector<std::vector<TrackFeatures>>& trackFeaturesVectors,
-      const OptionalCuts<typename track_container_t::ConstTrackProxy>& optionalCuts =
-          {}) const;
+      const OptionalCuts<typename track_container_t::ConstTrackProxy>&
+          optionalCuts = {}) const;
 
   /// Compute the score of each track based on the ambiguity function.
   ///
@@ -172,8 +172,8 @@ class ScoreBasedAmbiguityResolution {
   std::vector<double> ambiguityScore(
       const track_container_t& tracks,
       const std::vector<std::vector<TrackFeatures>>& trackFeaturesVectors,
-      const OptionalCuts<typename track_container_t::ConstTrackProxy>& optionalCuts =
-          {}) const;
+      const OptionalCuts<typename track_container_t::ConstTrackProxy>&
+          optionalCuts = {}) const;
 
   /// Remove hits that are not good enough for each track and removes tracks
   /// that have a score below a certain threshold or not enough hits.
@@ -202,8 +202,8 @@ class ScoreBasedAmbiguityResolution {
       const track_container_t& tracks,
       const std::vector<std::vector<MeasurementInfo>>& measurementsPerTrack,
       const std::vector<std::vector<TrackFeatures>>& trackFeaturesVectors,
-      const OptionalCuts<typename track_container_t::ConstTrackProxy>& optionalCuts =
-          {}) const;
+      const OptionalCuts<typename track_container_t::ConstTrackProxy>&
+          optionalCuts = {}) const;
 
  private:
   Config m_cfg;
