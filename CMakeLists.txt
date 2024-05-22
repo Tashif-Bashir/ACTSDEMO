@@ -189,10 +189,6 @@ if(ACTS_FORCE_ASSERTIONS)
   include_directories(BEFORE SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/cmake/assert_include)
 endif()
 
-
-# Include the sources for the external dependencies.
-include(ActsExternSources)
-
 # minimal dependency versions. they are defined here in a single place so
 # they can be easily upgraded, although they might not be used if the
 # dependency is included via `add_subdirectory(...)`.
@@ -210,13 +206,6 @@ set(_acts_nlohmanjson_version 3.2.0)
 set(_acts_onnxruntime_version 1.12.0)
 set(_acts_root_version 6.20)
 set(_acts_tbb_version 2020.1)
-set(_acts_vecmem_version 1.4.0)
-set(_acts_algebraplugins_version 0.22.0)
-set(_acts_covfie_version 0.9.0)
-set(_acts_detray_version 0.63.0)
-set(_acts_traccc_version origin/main)
-set(_acts_thrust_version 2.1.0)
-set(_acts_dfelibs_version 20211029)
 
 # recommended dependency version. if there is an opportunity to reach
 # this version we will try so.
