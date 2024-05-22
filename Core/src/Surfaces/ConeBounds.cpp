@@ -60,7 +60,6 @@ bool Acts::ConeBounds::inside(
     const Acts::Vector2& lposition,
     const Acts::BoundaryTolerance& boundaryTolerance) const {
   auto rphiHalf = r(lposition[eBoundLoc1]) * get(eHalfPhiSector);
-  // TODO jacobian?
   return AlignedBoxBoundaryCheck(Vector2(-rphiHalf, get(eMinZ)),
                                  Vector2(rphiHalf, get(eMaxZ)),
                                  boundaryTolerance)
