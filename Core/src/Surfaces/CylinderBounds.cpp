@@ -51,46 +51,46 @@ bool Acts::CylinderBounds::inside(
   double halfLengthZ = get(eHalfLengthZ);
   double halfPhi = get(eHalfPhiSector);
 
-  if (bevelMinZ == 0 && bevelMaxZ == 0) {
+  if (bevelMinZ != 0. && bevelMaxZ != 0.) {
+    double radius = get(eR);
+    // Beleved sides will unwrap to a trapezoid
+    ///////////////////////////////////
+    //  ________
+    // /| .  . |\ r/phi
+    // \|______|/ r/phi
+    // -Z   0  Z
+    ///////////////////////////////////
+    float localx =
+        lposition[0] > radius ? 2 * radius - lposition[0] : lposition[0];
+    Vector2 shiftedlposition = shifted(lposition);
+    if ((std::fabs(shiftedlposition[0]) <= halfPhi &&
+         std::fabs(shiftedlposition[1]) <= halfLengthZ)) {
+      return true;
+    } else if ((lposition[1] >=
+                -(localx * std::tan(bevelMinZ) + halfLengthZ)) &&
+               (lposition[1] <= (localx * std::tan(bevelMaxZ) + halfLengthZ))) {
+      return true;
+    } else {
+      // check within tolerance
+
+      Vector2 lowerLeft = {-radius, -halfLengthZ};
+      Vector2 middleLeft = {0., -(halfLengthZ + radius * std::tan(bevelMinZ))};
+      Vector2 upperLeft = {radius, -halfLengthZ};
+      Vector2 upperRight = {radius, halfLengthZ};
+      Vector2 middleRight = {0., (halfLengthZ + radius * std::tan(bevelMaxZ))};
+      Vector2 lowerRight = {-radius, halfLengthZ};
+      Vector2 vertices[] = {lowerLeft,  middleLeft,  upperLeft,
+                            upperRight, middleRight, lowerRight};
+
+      return PolygonBoundaryCheck(vertices, boundaryTolerance)
+          .inside(lposition, jacobian());
+    }
+  } else {
     return AlignedBoxBoundaryCheck(Vector2(-halfPhi, -halfLengthZ),
                                    Vector2(halfPhi, halfLengthZ),
                                    boundaryTolerance)
         .inside(shifted(lposition), jacobian());
   }
-
-  double radius = get(eR);
-  // Beleved sides will unwrap to a trapezoid
-  ///////////////////////////////////
-  //  ________
-  // /| .  . |\ r/phi
-  // \|______|/ r/phi
-  // -Z   0  Z
-  ///////////////////////////////////
-  float localx =
-      lposition[0] > radius ? 2 * radius - lposition[0] : lposition[0];
-  Vector2 shiftedlposition = shifted(lposition);
-  if ((std::fabs(shiftedlposition[0]) <= halfPhi &&
-       std::fabs(shiftedlposition[1]) <= halfLengthZ)) {
-    return true;
-  }
-  if ((lposition[1] >= -(localx * std::tan(bevelMinZ) + halfLengthZ)) &&
-      (lposition[1] <= (localx * std::tan(bevelMaxZ) + halfLengthZ))) {
-    return true;
-  }
-
-  // check within tolerance
-
-  Vector2 lowerLeft = {-radius, -halfLengthZ};
-  Vector2 middleLeft = {0., -(halfLengthZ + radius * std::tan(bevelMinZ))};
-  Vector2 upperLeft = {radius, -halfLengthZ};
-  Vector2 upperRight = {radius, halfLengthZ};
-  Vector2 middleRight = {0., (halfLengthZ + radius * std::tan(bevelMaxZ))};
-  Vector2 lowerRight = {-radius, halfLengthZ};
-  Vector2 vertices[] = {lowerLeft,  middleLeft,  upperLeft,
-                        upperRight, middleRight, lowerRight};
-
-  return PolygonBoundaryCheck(vertices, boundaryTolerance)
-      .inside(lposition, jacobian());
 }
 
 std::ostream& Acts::CylinderBounds::toStream(std::ostream& sl) const {
