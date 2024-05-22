@@ -32,7 +32,7 @@ namespace Acts::Test {
 // Some randomness & number crunching
 unsigned int ntests = 10;
 unsigned int nrepts = 2000;
-const bool boundaryCheck = false;
+const BoundaryTolerance boundaryTolerance = BoundaryTolerance::Infinite();
 const bool testPlane = true;
 const bool testDisc = true;
 const bool testCylinder = true;
@@ -81,7 +81,7 @@ MicroBenchmarkResult intersectionTest(const surface_t& surface, double phi,
   return Acts::Test::microBenchmark(
       [&] {
         return surface.intersect(tgContext, origin, direction,
-                                 BoundaryCheck(boundaryCheck));
+                                 boundaryTolerance);
       },
       nrepts);
 }

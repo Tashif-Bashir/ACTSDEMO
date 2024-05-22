@@ -9,6 +9,7 @@
 #include "Acts/Surfaces/CylinderBounds.hpp"
 
 #include "Acts/Definitions/TrackParametrization.hpp"
+#include "Acts/Surfaces/BoundaryCheck.hpp"
 #include "Acts/Surfaces/detail/VerticesHelper.hpp"
 #include "Acts/Utilities/VectorHelpers.hpp"
 
@@ -16,6 +17,7 @@
 #include <cmath>
 #include <iomanip>
 #include <iostream>
+#include <stdexcept>
 #include <utility>
 
 using Acts::VectorHelpers::perp;
@@ -41,89 +43,55 @@ Acts::ActsMatrix<2, 2> Acts::CylinderBounds::jacobian() const {
   return j;
 }
 
-bool Acts::CylinderBounds::inside(const Vector2& lposition,
-                                  const BoundaryCheck& bcheck) const {
+bool Acts::CylinderBounds::inside(
+    const Vector2& lposition,
+    const BoundaryTolerance& boundaryTolerance) const {
   double bevelMinZ = get(eBevelMinZ);
   double bevelMaxZ = get(eBevelMaxZ);
 
   double halfLengthZ = get(eHalfLengthZ);
   double halfPhi = get(eHalfPhiSector);
-  if (bevelMinZ != 0. && bevelMaxZ != 0.) {
-    double radius = get(eR);
-    // Beleved sides will unwrap to a trapezoid
-    ///////////////////////////////////
-    //  ________
-    // /| .  . |\ r/phi
-    // \|______|/ r/phi
-    // -Z   0  Z
-    ///////////////////////////////////
-    float localx =
-        lposition[0] > radius ? 2 * radius - lposition[0] : lposition[0];
-    Vector2 shiftedlposition = shifted(lposition);
-    if ((std::fabs(shiftedlposition[0]) <= halfPhi &&
-         std::fabs(shiftedlposition[1]) <= halfLengthZ)) {
-      return true;
-    } else if ((lposition[1] >=
-                -(localx * std::tan(bevelMinZ) + halfLengthZ)) &&
-               (lposition[1] <= (localx * std::tan(bevelMaxZ) + halfLengthZ))) {
-      return true;
-    } else {
-      // check within tolerance
-      auto boundaryCheck = bcheck.transformed(jacobian());
 
-      Vector2 lowerLeft = {-radius, -halfLengthZ};
-      Vector2 middleLeft = {0., -(halfLengthZ + radius * std::tan(bevelMinZ))};
-      Vector2 upperLeft = {radius, -halfLengthZ};
-      Vector2 upperRight = {radius, halfLengthZ};
-      Vector2 middleRight = {0., (halfLengthZ + radius * std::tan(bevelMaxZ))};
-      Vector2 lowerRight = {-radius, halfLengthZ};
-      Vector2 vertices[] = {lowerLeft,  middleLeft,  upperLeft,
-                            upperRight, middleRight, lowerRight};
-      Vector2 closestPoint =
-          boundaryCheck.computeClosestPointOnPolygon(lposition, vertices);
-
-      return boundaryCheck.isTolerated(closestPoint - lposition);
-    }
-  } else {
-    return bcheck.transformed(jacobian())
-        .isInside(shifted(lposition), Vector2(-halfPhi, -halfLengthZ),
-                  Vector2(halfPhi, halfLengthZ));
+  if (bevelMinZ == 0 && bevelMaxZ == 0) {
+    return AlignedBoxBoundaryCheck(Vector2(-halfPhi, -halfLengthZ),
+                                   Vector2(halfPhi, halfLengthZ),
+                                   boundaryTolerance)
+        .inside(shifted(lposition), jacobian());
   }
-}
 
-bool Acts::CylinderBounds::inside3D(const Vector3& position,
-                                    const BoundaryCheck& bcheck) const {
-  // additional tolerance from the boundary check if configured
-  bool checkAbsolute = bcheck.m_type == BoundaryCheck::Type::eAbsolute;
-
-  // this fast check only applies to closed cylindrical bounds
-  double addToleranceR =
-      (checkAbsolute && m_closed) ? bcheck.m_tolerance[0] : 0.;
-  double addToleranceZ = checkAbsolute ? bcheck.m_tolerance[1] : 0.;
-  // check if the position compatible with the radius
-  if ((s_onSurfaceTolerance + addToleranceR) <=
-      std::abs(perp(position) - get(eR))) {
-    return false;
-  } else if (checkAbsolute && m_closed) {
-    double bevelMinZ = get(eBevelMinZ);
-    double bevelMaxZ = get(eBevelMaxZ);
-
-    double addedMinZ =
-        bevelMinZ != 0. ? position.y() * std::sin(bevelMinZ) : 0.;
-    double addedMaxZ =
-        bevelMinZ != 0. ? position.y() * std::sin(bevelMaxZ) : 0.;
-
-    return ((s_onSurfaceTolerance + addToleranceZ + get(eHalfLengthZ) +
-             addedMinZ) >= position.z()) &&
-           ((s_onSurfaceTolerance + addToleranceZ + get(eHalfLengthZ) +
-             addedMaxZ) <= position.z());
+  double radius = get(eR);
+  // Beleved sides will unwrap to a trapezoid
+  ///////////////////////////////////
+  //  ________
+  // /| .  . |\ r/phi
+  // \|______|/ r/phi
+  // -Z   0  Z
+  ///////////////////////////////////
+  float localx =
+      lposition[0] > radius ? 2 * radius - lposition[0] : lposition[0];
+  Vector2 shiftedlposition = shifted(lposition);
+  if ((std::fabs(shiftedlposition[0]) <= halfPhi &&
+       std::fabs(shiftedlposition[1]) <= halfLengthZ)) {
+    return true;
   }
-  // detailed, but slower check
-  Vector2 lpos(detail::radian_sym(phi(position) - get(eAveragePhi)),
-               position.z());
-  return bcheck.transformed(jacobian())
-      .isInside(lpos, Vector2(-get(eHalfPhiSector), -get(eHalfLengthZ)),
-                Vector2(get(eHalfPhiSector), get(eHalfLengthZ)));
+  if ((lposition[1] >= -(localx * std::tan(bevelMinZ) + halfLengthZ)) &&
+      (lposition[1] <= (localx * std::tan(bevelMaxZ) + halfLengthZ))) {
+    return true;
+  }
+
+  // check within tolerance
+
+  Vector2 lowerLeft = {-radius, -halfLengthZ};
+  Vector2 middleLeft = {0., -(halfLengthZ + radius * std::tan(bevelMinZ))};
+  Vector2 upperLeft = {radius, -halfLengthZ};
+  Vector2 upperRight = {radius, halfLengthZ};
+  Vector2 middleRight = {0., (halfLengthZ + radius * std::tan(bevelMaxZ))};
+  Vector2 lowerRight = {-radius, halfLengthZ};
+  Vector2 vertices[] = {lowerLeft,  middleLeft,  upperLeft,
+                        upperRight, middleRight, lowerRight};
+
+  return PolygonBoundaryCheck(vertices, boundaryTolerance)
+      .inside(lposition, jacobian());
 }
 
 std::ostream& Acts::CylinderBounds::toStream(std::ostream& sl) const {

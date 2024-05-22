@@ -493,7 +493,7 @@ TrackingVolume::compatibleBoundaries(const GeometryContext& gctx,
       // Exclude the boundary where you are on
       if (excludeObject != &bSurfaceRep) {
         auto bCandidate = bSurfaceRep.intersect(gctx, position, direction,
-                                                options.boundaryCheck);
+                                                options.boundaryCheckTolerance);
         // Intersect and continue
         auto bIntersection = checkIntersection(bCandidate, bsIter.get());
         if (bIntersection.first) {

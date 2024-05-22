@@ -25,8 +25,8 @@
 namespace utf = boost::unit_test;
 const double inf = std::numeric_limits<double>::infinity();
 
-namespace Acts {
-namespace Test {
+namespace Acts::Test {
+
 BOOST_AUTO_TEST_SUITE(Surfaces)
 
 /// Unit test for creating compliant/non-compliant RectangleBounds object
@@ -92,8 +92,8 @@ BOOST_AUTO_TEST_CASE(RectangleBoundsProperties) {
                                 rectVertices.cbegin(), rectVertices.cend());
   const Vector2 pointA{1.0, 1.0};
   // distance is signed, from boundary to point. (doesn't seem right, given
-  BoundaryCheck bcheck(true, true);
-  BOOST_CHECK(rect.inside(pointA, bcheck));
+  BoundaryTolerance tolerance = BoundaryTolerance::None();
+  BOOST_CHECK(rect.inside(pointA, tolerance));
 }
 BOOST_AUTO_TEST_CASE(RectangleBoundsAssignment) {
   const double halfX(10.), halfY(2.);
@@ -108,5 +108,5 @@ BOOST_AUTO_TEST_CASE(RectangleBoundsAssignment) {
 }
 
 BOOST_AUTO_TEST_SUITE_END()
-}  // namespace Test
-}  // namespace Acts
+
+}  // namespace Acts::Test
