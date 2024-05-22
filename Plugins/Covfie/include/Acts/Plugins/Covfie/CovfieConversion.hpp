@@ -24,7 +24,7 @@
 #include "Acts/MagneticField/BFieldMapUtils.hpp"
 #include "Acts/MagneticField/ConstantBField.hpp"
 
-namespace Acts::CovfieConversion{
+namespace Acts::CovfiePlugin{
 
 using builder_backend_t = covfie::backend::strided<
     covfie::vector::size3,

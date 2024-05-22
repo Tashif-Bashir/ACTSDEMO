@@ -81,7 +81,7 @@ BOOST_AUTO_TEST_CASE(Covfie_Conversion_InterpolatedMagneticField1) {
                                     bField_xyz, 1, 1, false);
     auto cache = actsField.makeCache(fieldContext);
 
-    auto field = Acts::CovfieConversion::covfieField(actsField);
+    auto field = Acts::CovfiePlugin::covfieField(actsField);
     auto view = typename decltype(field)::view_t(field);
 
     std::array<std::array<float, 3>, 13> points = {{
@@ -124,7 +124,7 @@ BOOST_AUTO_TEST_CASE(Covfie_Conversion_InterpolatedMagneticField2) {
                                     bField_xyz, 1, 1, false);
     auto cache = actsField.makeCache(fieldContext);
 
-    auto field = Acts::CovfieConversion::covfieField(actsField);
+    auto field = Acts::CovfiePlugin::covfieField(actsField);
     auto view = typename decltype(field)::view_t(field);
 
     std::array<std::array<float, 3>, 13> points = {{
@@ -152,7 +152,7 @@ BOOST_AUTO_TEST_CASE(Covfie_Conversion_ConstantMagneticField1) {
     Acts::MagneticFieldContext ctx;
     auto cache = actsField.makeCache(ctx);
 
-    auto field = Acts::CovfieConversion::covfieField(actsField);
+    auto field = Acts::CovfiePlugin::covfieField(actsField);
     auto view = typename decltype(field)::view_t(field);
 
     std::array<std::array<float, 3>, 13> points = {{
@@ -185,7 +185,7 @@ BOOST_AUTO_TEST_CASE(Covfie_Conversion_MagneticFieldProvider1) {
     Acts::MagneticFieldContext ctx;
     auto cache = actsField.makeCache(ctx);
 
-    auto field = Acts::CovfieConversion::covfieField(actsField, cache, std::vector{20UL, 20UL, 20UL}, std::vector{0., 0., 0.}, std::vector{20., 20., 20.});
+    auto field = Acts::CovfiePlugin::covfieField(actsField, cache, std::vector{20UL, 20UL, 20UL}, std::vector{0., 0., 0.}, std::vector{20., 20., 20.});
     auto view = typename decltype(field)::view_t(field);
 
     std::array<std::array<float, 3>, 13> points = {{

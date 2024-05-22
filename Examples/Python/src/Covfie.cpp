@@ -38,12 +38,12 @@ void addCovfie(Context& ctx) {
   auto main = ctx.get("main");
   auto m = main.def_submodule("covfie_conversion", "Submodule for covfie conversion");
 
-  declareCovfieField<Acts::CovfieConversion::constant_field_t>(m, "CovfieConstantField");
-  declareCovfieField<Acts::CovfieConversion::interpolated_field_t>(m, "CovfieAffineLinearStridedField");
+  declareCovfieField<Acts::CovfiePlugin::constant_field_t>(m, "CovfieConstantField");
+  declareCovfieField<Acts::CovfiePlugin::interpolated_field_t>(m, "CovfieAffineLinearStridedField");
 
-  m.def("covfieField", py::overload_cast<const Acts::InterpolatedMagneticField&>(&Acts::CovfieConversion::covfieField));
-  m.def("covfieField", py::overload_cast<const Acts::ConstantBField&>(&Acts::CovfieConversion::covfieField));
-  m.def("covfieField", py::overload_cast<const Acts::MagneticFieldProvider&, Acts::MagneticFieldProvider::Cache&, const std::vector<std::size_t>&, const std::vector<double>&, const std::vector<double>&>(&Acts::CovfieConversion::covfieField));
+  m.def("covfieField", py::overload_cast<const Acts::InterpolatedMagneticField&>(&Acts::CovfiePlugin::covfieField));
+  m.def("covfieField", py::overload_cast<const Acts::ConstantBField&>(&Acts::CovfiePlugin::covfieField));
+  m.def("covfieField", py::overload_cast<const Acts::MagneticFieldProvider&, Acts::MagneticFieldProvider::Cache&, const std::vector<std::size_t>&, const std::vector<double>&, const std::vector<double>&>(&Acts::CovfiePlugin::covfieField));
 }
 
 }  // namespace Acts::Python

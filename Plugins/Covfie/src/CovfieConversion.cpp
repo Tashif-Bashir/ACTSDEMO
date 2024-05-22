@@ -8,7 +8,7 @@
 
 #include "Acts/Plugins/Covfie/CovfieConversion.hpp"
 
-namespace Acts::CovfieConversion{
+namespace Acts::CovfiePlugin{
 
 /// @brief Get the value of the interpolated field at a specific position (unchecked).
 /// @tparam cache_t 
