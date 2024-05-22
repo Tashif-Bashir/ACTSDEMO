@@ -14,7 +14,6 @@
 
 #include <iomanip>
 #include <iostream>
-#include <variant>
 
 /// Constructor for symmetric Trapezoid
 ///

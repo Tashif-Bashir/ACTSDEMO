@@ -17,7 +17,6 @@
 #include <cmath>
 #include <iomanip>
 #include <iostream>
-#include <stdexcept>
 #include <utility>
 
 using Acts::VectorHelpers::perp;
