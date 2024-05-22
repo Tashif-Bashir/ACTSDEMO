@@ -90,7 +90,7 @@ bool BoundaryTolerance::hasTolerance() const {
     return chi2Bound->maxChi2 != 0.;
   }
 
-  throw std::logic_error("Unsupported tolerance type");
+  assert(false && "Unsupported tolerance type");
 }
 
 BoundaryTolerance::AbsoluteBound BoundaryTolerance::asAbsoluteBound(
