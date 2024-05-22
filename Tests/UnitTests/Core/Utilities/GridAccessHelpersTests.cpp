@@ -57,6 +57,14 @@ BOOST_AUTO_TEST_CASE(Grid1DAccess) {
   BOOST_CHECK_EQUAL(grid.atPosition(fgAccess), 0u);
   BOOST_CHECK_EQUAL(grid.atPosition(sgAccess), 3u);
   BOOST_CHECK_EQUAL(grid.atPosition(tgAccess), 6u);
+
+  // Can this go into a delegate?
+  auto gsu = std::make_unique<const Acts::GridAccess::GlobalSubspace<binX>>();
+  Acts::GridAccess::GlobalToGridLocal1DimDelegate gsuDelegate;
+  gsuDelegate.connect<&Acts::GridAccess::GlobalSubspace<binX>::toGridLocal>(
+      std::move(gsu));
+
+  BOOST_CHECK(gsuDelegate.connected());
 }
 
 BOOST_AUTO_TEST_CASE(Grid2DAccess) {
@@ -98,8 +106,8 @@ BOOST_AUTO_TEST_CASE(GlobalToGridLocalTests) {
   BOOST_CHECK_EQUAL(z[0], 3.);
 
   Acts::GridAccess::Affine3Transformed<Acts::GridAccess::GlobalSubspace<binZ>>
-      gssZT(gssZ, Acts::Transform3(Acts::Transform3::Identity())
-                      .pretranslate(Vector3{0., 0., 100.}));
+      gssZT(gssZ, Acts::Transform3{Acts::Transform3::Identity()}.pretranslate(
+                      Vector3{0., 0., 100.}));
 
   auto zt = gssZT.toGridLocal(Vector3{1., 2., 3.});
   BOOST_CHECK_EQUAL(zt[0], 103.);
@@ -121,7 +129,7 @@ BOOST_AUTO_TEST_CASE(BoundCylinderToZPhiTests) {
   Acts::ActsScalar shift = 0.;
   Acts::GridAccess::BoundCylinderToZPhi bctzp(radius, shift);
 
-  auto zphi = bctzp.l2ZPhi(Vector2{0.25 * radius, 52.});
+  auto zphi = bctzp.toGridLocal(Vector2{0.25 * radius, 52.});
 
   CHECK_CLOSE_ABS(zphi[0], 52., 1.e-6);
   CHECK_CLOSE_ABS(zphi[1], 0.25, 1.e-6);

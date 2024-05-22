@@ -18,6 +18,24 @@
 // Custom Json encoder/decoders.
 namespace Acts {
 
+namespace detail {
+
+/// @cond
+NLOHMANN_JSON_SERIALIZE_ENUM(Acts::detail::AxisBoundaryType,
+                             {{Acts::detail::AxisBoundaryType::Bound, "Bound"},
+                              {Acts::detail::AxisBoundaryType::Open, "Open"},
+                              {Acts::detail::AxisBoundaryType::Closed,
+                               "Closed"}})
+
+NLOHMANN_JSON_SERIALIZE_ENUM(Acts::detail::AxisType,
+                             {{Acts::detail::AxisType::Equidistant,
+                               "Equidistant"},
+                              {Acts::detail::AxisType::Variable, "Variable"}})
+
+/// @endcond
+
+}  // namespace detail
+
 namespace AxisJsonConverter {
 
 /// Convert an axis to json
@@ -50,7 +68,31 @@ nlohmann::json toJson(const GridAccess::IGlobalToGridLocal& globalToGridLocal);
 /// @param jGlobalToGridLocal the json snippet
 ///
 /// @return a newly created object
-std::unique_ptr<GridAccess::IGlobalToGridLocal> globalToGridLocalFromJson(
+std::unique_ptr<const GridAccess::IGlobalToGridLocal> globalToGridLocalFromJson(
+    const nlohmann::json& jGlobalToGridLocal);
+
+/// Create the delegate directly
+///
+/// @param jGlobalToGridLocal the json snippet
+///
+/// This is the usual workflow, as the connect method can be called on
+/// the concreate type
+///
+/// @note the dimension of the delegate has to be known by peeking
+/// into the json object
+GridAccess::GlobalToGridLocal1DimDelegate globalToGridLocal1DimDelegateFromJson(
+    const nlohmann::json& jGlobalToGridLocal);
+
+/// Create the delegate directly
+///
+/// @param jGlobalToGridLocal the json snippet
+///
+/// This is the usual workflow, as the connect method can be called on
+/// the concreate type
+///
+/// @note the dimension of the delegate has to be known by peeking
+/// into the json object
+GridAccess::GlobalToGridLocal2DimDelegate globalToGridLocal2DimDelegateFromJson(
     const nlohmann::json& jGlobalToGridLocal);
 
 /// Convert a local to local access to json
@@ -66,6 +108,30 @@ nlohmann::json toJson(const GridAccess::IBoundToGridLocal& boundToGridLocal);
 ///
 /// @return a newly created object
 std::unique_ptr<GridAccess::IBoundToGridLocal> boundToGridLocalFromJson(
+    const nlohmann::json& jBoundToGridLocal);
+
+/// Create the delegate directly
+///
+/// @param jBoundToGridLocal the json snippe
+///
+/// This is the usual workflow, as the connect method can be called on
+/// the concreate type
+///
+/// @note the dimension of the delegate has to be known by peeking
+/// into the json object
+GridAccess::BoundToGridLocal1DimDelegate boundToGridLocal1DimDelegateFromJson(
+    const nlohmann::json& jBoundToGridLocal);
+
+/// Create the delegate directly
+///
+/// @param jBoundToGridLocal the json snippe
+///
+/// This is the usual workflow, as the connect method can be called on
+/// the concreate type
+///
+/// @note the dimension of the delegate has to be known by peeking
+/// into the json object
+GridAccess::BoundToGridLocal2DimDelegate boundToGridLocal2DimDelegateFromJson(
     const nlohmann::json& jBoundToGridLocal);
 
 }  // namespace GridAccessJsonConverter
@@ -221,19 +287,4 @@ auto fromJson(const nlohmann::json& jGrid,
 }
 
 }  // namespace GridJsonConverter
-
-/// @cond
-NLOHMANN_JSON_SERIALIZE_ENUM(Acts::detail::AxisBoundaryType,
-                             {{Acts::detail::AxisBoundaryType::Bound, "Bound"},
-                              {Acts::detail::AxisBoundaryType::Open, "Open"},
-                              {Acts::detail::AxisBoundaryType::Closed,
-                               "Closed"}})
-
-NLOHMANN_JSON_SERIALIZE_ENUM(Acts::detail::AxisType,
-                             {{Acts::detail::AxisType::Equidistant,
-                               "Equidistant"},
-                              {Acts::detail::AxisType::Variable, "Variable"}})
-
-/// @endcond
-
 }  // namespace Acts

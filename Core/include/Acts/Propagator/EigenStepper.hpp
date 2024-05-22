@@ -80,8 +80,10 @@ class EigenStepper {
           stepSize(ssize),
           fieldCache(std::move(fieldCacheIn)),
           geoContext(gctx) {
-      pars.template segment<3>(eFreePos0) = par.position(gctx);
-      pars.template segment<3>(eFreeDir0) = par.direction();
+      Vector3 position = par.position(gctx);
+      Vector3 direction = par.direction();
+      pars.template segment<3>(eFreePos0) = position;
+      pars.template segment<3>(eFreeDir0) = direction;
       pars[eFreeTime] = par.time();
       pars[eFreeQOverP] = par.parameters()[eBoundQOverP];
 
@@ -92,7 +94,7 @@ class EigenStepper {
         // set the covariance transport flag to true and copy
         covTransport = true;
         cov = BoundSquareMatrix(*par.covariance());
-        jacToGlobal = surface.boundToFreeJacobian(gctx, par.parameters());
+        jacToGlobal = surface.boundToFreeJacobian(gctx, position, direction);
       }
     }
 
@@ -121,6 +123,12 @@ class EigenStepper {
 
     /// Accummulated path length state
     double pathAccumulated = 0.;
+
+    /// Total number of performed steps
+    std::size_t nSteps = 0;
+
+    /// Totoal number of attempted steps
+    std::size_t nStepTrials = 0;
 
     /// Adaptive step size of the runge-kutta integration
     ConstrainedStep stepSize;
@@ -310,10 +318,7 @@ class EigenStepper {
   }
 
   /// Overstep limit
-  ///
-  /// @param state The stepping state (thread-local cache)
-  double overstepLimit(const State& state) const {
-    (void)state;
+  double overstepLimit(const State& /*state*/) const {
     // A dynamic overstep limit could sit here
     return -m_overstepLimit;
   }
@@ -432,7 +437,7 @@ class EigenStepper {
   std::shared_ptr<const MagneticFieldProvider> m_bField;
 
   /// Overstep limit
-  double m_overstepLimit;
+  double m_overstepLimit{};
 };
 
 template <typename navigator_t>

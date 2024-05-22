@@ -14,9 +14,7 @@
 #include <utility>
 #include <vector>
 
-namespace Acts {
-
-namespace detail {
+namespace Acts::detail {
 
 // The container for derivative of local frame axis w.r.t. its
 // rotation parameters. The first element is for x axis, second for y axis and
@@ -37,6 +35,4 @@ RotationToAxes rotationToLocalAxesDerivative(
     const RotationMatrix3& compositeRotation,
     const RotationMatrix3& relRotation = RotationMatrix3::Identity());
 
-}  // namespace detail
-
-}  // namespace Acts
+}  // namespace Acts::detail
