@@ -79,9 +79,6 @@ bool Acts::CylinderBounds::inside(
     return true;
   }
 
-  // check within tolerance
-  auto boundaryCheck = bcheck.transformed(jacobian());
-
   Vector2 lowerLeft = {-radius, -halfLengthZ};
   Vector2 middleLeft = {0., -(halfLengthZ + radius * std::tan(bevelMinZ))};
   Vector2 upperLeft = {radius, -halfLengthZ};
@@ -90,10 +87,9 @@ bool Acts::CylinderBounds::inside(
   Vector2 lowerRight = {-radius, halfLengthZ};
   Vector2 vertices[] = {lowerLeft,  middleLeft,  upperLeft,
                         upperRight, middleRight, lowerRight};
-  Vector2 closestPoint =
-      boundaryCheck.computeClosestPointOnPolygon(lposition, vertices);
 
-  return boundaryCheck.isTolerated(closestPoint - lposition);
+  return PolygonBoundaryCheck(vertices, boundaryTolerance)
+      .inside(lposition, jacobian());
 }
 
 std::ostream& Acts::CylinderBounds::toStream(std::ostream& sl) const {

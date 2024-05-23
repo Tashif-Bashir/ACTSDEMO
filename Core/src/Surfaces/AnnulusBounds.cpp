@@ -196,6 +196,12 @@ bool Acts::AnnulusBounds::inside(
     return true;
   }
 
+  if (!boundaryTolerance.hasChi2Bound()) {
+    throw std::logic_error("not implemented");
+  }
+
+  const auto& boundaryToleranceChi2 = boundaryTolerance.asChi2Bound();
+
   // locpo is PC in STRIP SYSTEM
   // we need to rotate the locpo
   Vector2 locpo_rotated = m_rotationStripPC * lposition;
@@ -282,15 +288,10 @@ bool Acts::AnnulusBounds::inside(
   jacobianStripPCToModulePC(1, 0) = -(B * O_y - C * O_x) / A;
   jacobianStripPCToModulePC(1, 1) = r_strip * (B * O_x + C * O_y + r_strip) / A;
 
-  // covariance is given in STRIP PC
-  auto covStripPC = bcheck.covariance();
-  // calculate covariance in MODULE PC using jacobian from above
-  auto covModulePC = jacobianStripPCToModulePC * covStripPC *
-                     jacobianStripPCToModulePC.transpose();
-
   // Mahalanobis distance uses inverse covariance as weights
-  auto weightStripPC = covStripPC.inverse();
-  auto weightModulePC = covModulePC.inverse();
+  auto weightStripPC = boundaryToleranceChi2.weight;
+  auto weightModulePC = jacobianStripPCToModulePC.transpose() * weightStripPC *
+                        jacobianStripPCToModulePC;
 
   double minDist = std::numeric_limits<double>::max();
 
@@ -337,7 +338,8 @@ bool Acts::AnnulusBounds::inside(
 
   // compare resulting Mahalanobis distance to configured "number of sigmas" we
   // square it b/c we never took the square root of the distance
-  return minDist < bcheck.tolerance()[0] * bcheck.tolerance()[0];
+  return minDist <
+         boundaryToleranceChi2.maxChi2 * boundaryToleranceChi2.maxChi2;
 }
 
 Acts::Vector2 Acts::AnnulusBounds::stripXYToModulePC(
