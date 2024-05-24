@@ -186,7 +186,7 @@ Acts::Result<double> Acts::EigenStepper<E, A>::step(
     // Whether to use fast power function if available
     constexpr bool tryUseFastPow{false};
 
-    double x = state.options.stepTolerance / errorEstimate_;
+    double x = state.options.stepping.stepTolerance / errorEstimate_;
 
     if constexpr (exponent == 0.25 && !tryUseFastPow) {
       // This is 3x faster than std::pow
@@ -252,7 +252,7 @@ Acts::Result<double> Acts::EigenStepper<E, A>::step(
     // Protect against division by zero
     errorEstimate = std::max(1e-20, errorEstimate);
 
-    return success(errorEstimate <= state.options.stepTolerance);
+    return success(errorEstimate <= state.options.stepping.stepTolerance);
   };
 
   const double initialH =
@@ -275,14 +275,14 @@ Acts::Result<double> Acts::EigenStepper<E, A>::step(
 
     // If step size becomes too small the particle remains at the initial
     // place
-    if (std::abs(h) < std::abs(state.options.stepSizeCutOff)) {
+    if (std::abs(h) < std::abs(state.options.stepping.stepSizeCutOff)) {
       // Not moving due to too low momentum needs an aborter
       return EigenStepperError::StepSizeStalled;
     }
 
     // If the parameter is off track too much or given stepSize is not
     // appropriate
-    if (nStepTrials > state.options.maxRungeKuttaStepTrials) {
+    if (nStepTrials > state.options.stepping.maxRungeKuttaStepTrials) {
       // Too many trials, have to abort
       return EigenStepperError::StepSizeAdjustmentFailed;
     }
