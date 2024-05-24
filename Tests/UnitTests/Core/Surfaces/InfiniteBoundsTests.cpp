@@ -15,9 +15,8 @@
 #include "Acts/Surfaces/InfiniteBounds.hpp"
 #include "Acts/Surfaces/SurfaceBounds.hpp"
 
-namespace Acts {
+namespace Acts::Test {
 
-namespace Test {
 BOOST_AUTO_TEST_SUITE(Surfaces)
 /// Unit test for creating compliant/non-compliant InfiniteBounds object
 BOOST_AUTO_TEST_CASE(InfiniteBoundsConstruction) {
@@ -36,8 +35,8 @@ BOOST_AUTO_TEST_CASE(InfiniteBoundsProperties) {
 
   /// test for inside()
   const Vector2 anyVector{0., 1.};
-  const BoundaryCheck anyBoundaryCheck(true);
-  BOOST_CHECK(infiniteBoundsObject.inside(anyVector, anyBoundaryCheck));
+  const BoundaryTolerance anyTolerance = BoundaryTolerance::None();
+  BOOST_CHECK(infiniteBoundsObject.inside(anyVector, anyTolerance));
 
   /// test for dump
   boost::test_tools::output_test_stream dumpOuput;
@@ -48,6 +47,4 @@ BOOST_AUTO_TEST_CASE(InfiniteBoundsProperties) {
 
 BOOST_AUTO_TEST_SUITE_END()
 
-}  // namespace Test
-
-}  // namespace Acts
+}  // namespace Acts::Test

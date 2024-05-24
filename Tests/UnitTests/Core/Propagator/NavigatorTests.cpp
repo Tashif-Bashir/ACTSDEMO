@@ -141,11 +141,11 @@ struct PropagatorState {
 
     Intersection3D::Status updateSurfaceStatus(
         State& state, const Surface& surface, std::uint8_t index,
-        Direction navDir, const BoundaryCheck& bcheck,
+        Direction navDir, const BoundaryTolerance& boundaryTolerance,
         ActsScalar surfaceTolerance, const Logger& logger) const {
       return detail::updateSingleSurfaceStatus<Stepper>(
-          *this, state, surface, index, navDir, bcheck, surfaceTolerance,
-          logger);
+          *this, state, surface, index, navDir, boundaryTolerance,
+          surfaceTolerance, logger);
     }
 
     template <typename object_intersection_t>

@@ -20,9 +20,8 @@
 #include <stdexcept>
 #include <vector>
 
-namespace Acts {
+namespace Acts::Test {
 
-namespace Test {
 BOOST_AUTO_TEST_SUITE(Surfaces)
 /// Unit test for creating compliant/non-compliant LineBounds object
 BOOST_AUTO_TEST_CASE(LineBoundsConstruction) {
@@ -88,21 +87,18 @@ BOOST_AUTO_TEST_CASE(LineBoundsProperties) {
   const Vector2 beyondEnd{0.0, 30.0};
   const Vector2 unitZ{0.0, 1.0};
   const Vector2 unitR{1.0, 0.0};
-  const BoundaryCheck trueBoundaryCheckWithTolerance(true, true, 0.1, 0.1);
+  const BoundaryTolerance tolerance =
+      BoundaryTolerance::AbsoluteBound(0.1, 0.1);
   // This fails because the bounds are not inclusive.
-  BOOST_CHECK(
-      !lineBoundsObject.inside(atRadius, trueBoundaryCheckWithTolerance));
-  BOOST_CHECK(
-      !lineBoundsObject.inside(beyondEnd, trueBoundaryCheckWithTolerance));
-  BOOST_CHECK(lineBoundsObject.inside(unitZ, trueBoundaryCheckWithTolerance));
-  BOOST_CHECK(!lineBoundsObject.inside(unitR, trueBoundaryCheckWithTolerance));
+  BOOST_CHECK(!lineBoundsObject.inside(atRadius, tolerance));
+  BOOST_CHECK(!lineBoundsObject.inside(beyondEnd, tolerance));
+  BOOST_CHECK(lineBoundsObject.inside(unitZ, tolerance));
+  BOOST_CHECK(!lineBoundsObject.inside(unitR, tolerance));
 
   /// Test negative redius inside
 
-  BOOST_CHECK(lineBoundsObject.inside(Vector2{-0.2, 10},
-                                      trueBoundaryCheckWithTolerance));
-  BOOST_CHECK(!lineBoundsObject.inside(Vector2{-0.8, 10},
-                                       trueBoundaryCheckWithTolerance));
+  BOOST_CHECK(lineBoundsObject.inside(Vector2{-0.2, 10}, tolerance));
+  BOOST_CHECK(!lineBoundsObject.inside(Vector2{-0.8, 10}, tolerance));
 
   /// test for r()
   BOOST_CHECK_EQUAL(lineBoundsObject.get(LineBounds::eR), nominalRadius);
@@ -120,6 +116,4 @@ BOOST_AUTO_TEST_CASE(LineBoundsProperties) {
 
 BOOST_AUTO_TEST_SUITE_END()
 
-}  // namespace Test
-
-}  // namespace Acts
+}  // namespace Acts::Test
