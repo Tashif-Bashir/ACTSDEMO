@@ -44,7 +44,7 @@ namespace Acts {
 /// is not required anyway (as discussed above), not storing it removes all
 /// these complications altogether.
 template <typename indices_t, std::size_t kSize>
-class Measurement {
+class FixedSizeMeasurement {
   static constexpr std::size_t kFullSize = detail::kParametersSize<indices_t>;
 
   using Subspace = detail::FixedSizeSubspace<kFullSize, kSize>;
@@ -72,9 +72,10 @@ class Measurement {
   /// @note The indices must be ordered and must describe/match the content
   ///   of parameters and covariance.
   template <typename parameters_t, typename covariance_t>
-  Measurement(SourceLink source, const std::array<indices_t, kSize>& indices,
-              const Eigen::MatrixBase<parameters_t>& params,
-              const Eigen::MatrixBase<covariance_t>& cov)
+  FixedSizeMeasurement(SourceLink source,
+                       const std::array<indices_t, kSize>& indices,
+                       const Eigen::MatrixBase<parameters_t>& params,
+                       const Eigen::MatrixBase<covariance_t>& cov)
       : m_source(std::move(source)),
         m_subspace(indices),
         m_params(params),
@@ -87,15 +88,17 @@ class Measurement {
     //   refactor their implementation later on.
   }
   /// A measurement can only be constructed with valid parameters.
-  Measurement() = delete;
-  Measurement(const Measurement&) = default;
-  Measurement(Measurement&&) = default;
-  ~Measurement() = default;
-  Measurement& operator=(const Measurement&) = default;
-  Measurement& operator=(Measurement&&) = default;
+  FixedSizeMeasurement() = delete;
+  FixedSizeMeasurement(const FixedSizeMeasurement&) = default;
+  FixedSizeMeasurement(FixedSizeMeasurement&&) = default;
+  ~FixedSizeMeasurement() = default;
+  FixedSizeMeasurement& operator=(const FixedSizeMeasurement&) = default;
+  FixedSizeMeasurement& operator=(FixedSizeMeasurement&&) = default;
 
   /// Source link that connects to the underlying detector readout.
   const SourceLink& sourceLink() const { return m_source; }
+
+  const Subspace& subspace() const { return m_subspace; }
 
   /// Number of measured parameters.
   static constexpr std::size_t size() { return kSize; }
@@ -162,6 +165,142 @@ class Measurement {
   CovarianceMatrix m_cov;
 };
 
+template <typename indices_t>
+class VariableSizeMeasurement {
+  static constexpr std::size_t kFullSize = detail::kParametersSize<indices_t>;
+
+  // TODO variable size
+  using Subspace = detail::VariableSizeSubspace<kFullSize>;
+
+ public:
+  using Scalar = ActsScalar;
+  /// Vector type containing for measured parameter values.
+  using ParametersVector = Eigen::Matrix<Scalar, Eigen::Dynamic, 1>;
+  using ParametersVectorMap = Eigen::Map<ParametersVector>;
+  using ConstParametersVectorMap = Eigen::Map<const ParametersVector>;
+  /// Matrix type for the measurement covariance.
+  using CovarianceMatrix =
+      Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>;
+  using CovarianceMatrixMap = Eigen::Map<CovarianceMatrix>;
+  using ConstCovarianceMatrixMap = Eigen::Map<const CovarianceMatrix>;
+
+  using FullParametersVector = ActsVector<kFullSize>;
+  using FullCovarianceMatrix = ActsSquareMatrix<kFullSize>;
+
+  using ProjectionMatrix = Eigen::Matrix<Scalar, Eigen::Dynamic, kFullSize>;
+  using ExpansionMatrix = Eigen::Matrix<Scalar, kFullSize, Eigen::Dynamic>;
+
+  /// Construct from source link, subset indices, and measured data.
+  ///
+  /// @tparam parameters_t Input parameters vector type
+  /// @tparam covariance_t Input covariance matrix type
+  /// @param source The link that connects to the underlying detector readout
+  /// @param indices Which parameters are measured
+  /// @param params Measured parameters values
+  /// @param cov Measured parameters covariance
+  ///
+  /// @note The indices must be ordered and must describe/match the content
+  ///   of parameters and covariance.
+  template <std::size_t kSize, typename parameters_t, typename covariance_t>
+  VariableSizeMeasurement(SourceLink source,
+                          const std::array<indices_t, kSize>& indices,
+                          const parameters_t& params, const covariance_t& cov)
+      : m_source(std::move(source)), m_subspace(indices) {
+    // TODO we should be able to support arbitrary ordering, by sorting the
+    //   indices and reordering parameters/covariance. since the parameter order
+    //   can be modified by the user, the user can not always know what the
+    //   right order is. another option is too remove the requirement for index
+    //   ordering from the subspace types, but that will make it harder to
+    //   refactor their implementation later on.
+
+    static_assert(kSize == parameters_t::RowsAtCompileTime,
+                  "Parameter size mismatch");
+    static_assert(kSize == covariance_t::RowsAtCompileTime,
+                  "Covariance rows mismatch");
+    static_assert(kSize == covariance_t::ColsAtCompileTime,
+                  "Covariance cols mismatch");
+
+    parameters() = params;
+    covariance() = cov;
+  }
+  /// A measurement can only be constructed with valid parameters.
+  VariableSizeMeasurement() = delete;
+  VariableSizeMeasurement(const VariableSizeMeasurement&) = default;
+  VariableSizeMeasurement(VariableSizeMeasurement&&) = default;
+  ~VariableSizeMeasurement() = default;
+  VariableSizeMeasurement& operator=(const VariableSizeMeasurement&) = default;
+  VariableSizeMeasurement& operator=(VariableSizeMeasurement&&) = default;
+
+  constexpr std::size_t size() const { return m_subspace.size(); }
+
+  /// Source link that connects to the underlying detector readout.
+  const SourceLink& sourceLink() const { return m_source; }
+
+  const Subspace& subspace() const { return m_subspace; }
+
+  /// Check if a specific parameter is part of this measurement.
+  bool contains(indices_t i) const { return m_subspace.contains(i); }
+
+  ConstParametersVectorMap parameters() const {
+    return {m_params.data(), static_cast<Eigen::Index>(size())};
+  }
+  ParametersVectorMap parameters() {
+    return {m_params.data(), static_cast<Eigen::Index>(size())};
+  }
+
+  ConstCovarianceMatrixMap covariance() const {
+    return {m_cov.data(), static_cast<Eigen::Index>(size()),
+            static_cast<Eigen::Index>(size())};
+  }
+  CovarianceMatrixMap covariance() {
+    return {m_cov.data(), static_cast<Eigen::Index>(size()),
+            static_cast<Eigen::Index>(size())};
+  }
+
+  FullParametersVector fullParameters() const {
+    FullParametersVector result = FullParametersVector::Zero();
+    for (std::size_t i = 0; i < size(); ++i) {
+      result[m_subspace[i]] = parameters()[i];
+    }
+    return result;
+  }
+
+  FullCovarianceMatrix fullCovariance() const {
+    FullCovarianceMatrix result = FullCovarianceMatrix::Zero();
+    for (std::size_t i = 0; i < size(); ++i) {
+      for (std::size_t j = 0; j < size(); ++j) {
+        result(m_subspace[i], m_subspace[j]) = covariance()(i, j);
+      }
+    }
+    return result;
+  }
+
+  /// Projection matrix from the full space into the measured subspace.
+  ProjectionMatrix projector() const {
+    return m_subspace.template projector<Scalar>();
+  }
+
+  /// Expansion matrix from the measured subspace into the full space.
+  ///
+  /// This is equivalent to the transpose of the projection matrix only in the
+  /// case of a trivial projection matrix. While this is the case here, it is
+  /// still recommended to use the expansion matrix directly in cases where it
+  /// is explicitly used.
+  ExpansionMatrix expander() const {
+    return m_subspace.template expander<Scalar>();
+  }
+
+ private:
+  SourceLink m_source;
+  Subspace m_subspace;
+  std::array<Scalar, kFullSize> m_params{};
+  std::array<Scalar, kFullSize * kFullSize> m_cov{};
+};
+
+// Typedef `FixedSizeMeasurement` to `Measurement` for compatibility.
+template <typename indices_t, std::size_t kSize>
+using Measurement = FixedSizeMeasurement<indices_t, kSize>;
+
 /// Construct a fixed-size measurement for the given indices.
 ///
 /// @tparam parameters_t Input parameters vector type
@@ -191,7 +330,7 @@ auto makeMeasurement(SourceLink source,
                      const Eigen::MatrixBase<parameters_t>& params,
                      const Eigen::MatrixBase<covariance_t>& cov,
                      indices_t index0, tail_indices_t... tailIndices)
-    -> Measurement<indices_t, 1u + sizeof...(tail_indices_t)> {
+    -> FixedSizeMeasurement<indices_t, 1u + sizeof...(tail_indices_t)> {
   using IndexContainer = std::array<indices_t, 1u + sizeof...(tail_indices_t)>;
   return {std::move(source), IndexContainer{index0, tailIndices...}, params,
           cov};
@@ -236,6 +375,9 @@ using BoundVariantMeasurement = VariantMeasurement<BoundIndices>;
 /// Variant that can hold all possible free measurements.
 ///
 using FreeVariantMeasurement = VariantMeasurement<FreeIndices>;
+
+using BoundVariableMeasurement = VariableSizeMeasurement<BoundIndices>;
+using FreeVariableMeasurement = VariableSizeMeasurement<FreeIndices>;
 
 template <typename indices_t>
 std::ostream& operator<<(std::ostream& os,
