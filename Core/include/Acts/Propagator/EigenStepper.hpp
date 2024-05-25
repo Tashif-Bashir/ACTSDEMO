@@ -162,7 +162,8 @@ class EigenStepper {
   };
 
   /// Constructor requires knowledge of the detector's magnetic field
-  EigenStepper(std::shared_ptr<const MagneticFieldProvider> bField);
+  /// @param bField The magnetic field provider
+  explicit EigenStepper(std::shared_ptr<const MagneticFieldProvider> bField);
 
   State makeState(std::reference_wrapper<const GeometryContext> gctx,
                   std::reference_wrapper<const MagneticFieldContext> mctx,
